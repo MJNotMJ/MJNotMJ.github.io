@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://MJNotMJ.github.io</id>
     <title>MJNotMJ</title>
-    <updated>2019-05-26T07:29:40.941Z</updated>
+    <updated>2019-05-26T07:42:16.229Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://MJNotMJ.github.io"/>
     <link rel="self" href="https://MJNotMJ.github.io/atom.xml"/>
@@ -10,6 +10,462 @@
     <logo>https://MJNotMJ.github.io/images/avatar.png</logo>
     <icon>https://MJNotMJ.github.io/favicon.ico</icon>
     <rights>All rights reserved 2019, MJNotMJ</rights>
+    <entry>
+        <title type="html"><![CDATA[初识Nginx]]></title>
+        <id>https://MJNotMJ.github.io/post/chu-shi-nginx</id>
+        <link href="https://MJNotMJ.github.io/post/chu-shi-nginx">
+        </link>
+        <updated>2019-05-26T07:41:27.000Z</updated>
+        <summary type="html"><![CDATA[<p>Nginx 是一个 http 服务器。是一个使用c语言开发的高性能的 <strong>http 服务器</strong>及<strong>反向代理服务器</strong>。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Nginx 是一个 http 服务器。是一个使用c语言开发的高性能的 <strong>http 服务器</strong>及<strong>反向代理服务器</strong>。</p>
+<!-- more -->
+<h1 id="初识nginx">初识Nginx</h1>
+<h2 id="背景">背景</h2>
+<ul>
+<li>Apache    HTTP Server</li>
+<li>Nginx     HTTP Server</li>
+<li>Tomcat    Application Server      更准确的说是 Servlet / JSP 的应用容器</li>
+</ul>
+<h2 id="nginx-是什么">Nginx 是什么</h2>
+<p>Nginx 是一个 http 服务器。是一个使用c语言开发的高性能的 <strong>http 服务器</strong>及<strong>反向代理服务器</strong>。</p>
+<h3 id="nginx-应用场景">Nginx 应用场景</h3>
+<ol>
+<li><strong>http服务器</strong>。Nginx是一个 http 服务可以独立提供 http 服务。可以做网页静态服务器。</li>
+<li><strong>虚拟主机</strong>。可以实现在一台服务器虚拟出多个网站。例如个人网站使用的虚拟主机。</li>
+<li><strong>反向代理，负载均衡</strong>。当网站的访问量达到一定程度后，单台服务器不能满足用户的请求时，需要用多台服务器集群可以使用 Nginx 做反向代理。并且多台服务器可以平均分担负载，不会因为某台服务器负载高宕机而某台服务器闲置的情况。</li>
+</ol>
+<h3 id="反向代理服务器-是什么">反向代理服务器 是什么</h3>
+<p>反向代理（ Reverse Proxy ）[rɪ'vɝs]</p>
+<p>那举一反三，既然有反向代理，那肯定也有正向代理，两个概念对比着来看。</p>
+<p>正向代理，其实就是我们平常所说的“ 代理服务器 ”，应用最多的场景就是突破 GFW 的封锁，去访问 Google 的互联网服务。先简单介绍一下 GFW 的封锁原理。首先在国内所有互联网服务提供商都被几家国有的大型企业所垄断，也就是说在国内所有的能上网的 IP 都是由这些寡头所分配，人家肯定知道你的 IP 是多少，于是当你的 IP 去访问 Google 的 IP 时，这些互联网的运营商就会对你的请求数据包进行拦截，这就是所谓的 GFW 的最基本的拦截原理。</p>
+<p>GFW 知道 Google 的 IP 很正常，但是全球这么多 IP 地址它不可能都去封锁。所以，可以在国外架设一个代理服务器去替国内的客户端访问 Google 的服务，然后再由这个代理服务器把返回的结果告诉国内的客户端。在 GFW 看来，国内的 IP 只是访问了一个国外 IP 而已，它不知道国外这个普通的IP到底是干什么的，而且也不可能知道。所以，通过这种方式就把 GFW 能监管的那部分移到了国外进行，从而实现了“ 翻墙 ”。
+以上就是<strong>正向代理</strong>的例子，这个代理服务器隐匿了客户端的请求信息，整合了这些客户端的请求信息后，统一面向服务端。即把多个客户端的请求整合映射到同一个服务器上。具体对于 Google 的服务器来说，它直接面对的是这个搜集所有客户端请求的代理服务器，而不是散落在全球各地的客户端。</p>
+<p>（ 假装有图片 ）</p>
+<p>反向代理，则正好相反。即把单一客户端的请求去映射到不同的服务器上。</p>
+<p>举个具体的例子：楼下有一家外卖餐馆，周围社区的人们可以通过拨打123456这个电话号码订外卖，然后餐馆会送餐上门。凭借着优质的送餐服务和可口的饭菜，这家外卖餐馆的生意红火起来。但随之发生的就是“ 需求大于供应 ”，好多单生意都因为餐馆的产能不足、送餐人手不够而被迫取消。这不仅是利益受损，更大的坏处就是对于自身的口碑也有很大的影响。</p>
+<p>穷则思变，变则通，通则不痛。外卖餐馆老板以前是计算机专业毕业的，于是，他运用反向代理的原理来架构自己的餐饮服务。首先，他拿出之前生意红火时的收益，又在社区的不同地域开了几家连锁店，对外提供标准相同的外卖点餐服务；接下来，他又把之前的<strong>电话点餐渠道</strong>抽离出来，单独作为一个<strong>平台</strong>去处理消费者的点餐需求。当一个消费者打过电话来的时候，这个<strong>电话点餐平台</strong>就会根据消费者的<strong>地理位置</strong>、<strong>社区内几家连锁店的繁忙程度</strong>、<strong>送餐人员的调度</strong>等等这些因素来综合决策，确定由哪家连锁店去完成这个订单。</p>
+<p>于是经过上述的重新组织后，连锁店老板在面对大量的消费者订单时就不会手忙脚乱了，<strong>电话点餐平台</strong>会有条不紊地把这几家连锁店的资源有效整合起来。对于消费者来说，还是之前的123456点餐电话没变，现在甚至比之前的送餐速度还有所增加，毕竟是本着<strong>就近原则</strong>去调度订单的。</p>
+<p>通过上面的例子，我们就会发现，<strong>电话点餐平台</strong>其实就是一个代理服务器，它把一个消费者的订单调度到不同连锁店去完成。在这里，消费者就相当于客户端，连锁店就相当于服务器。这个“反向代理”的意思就体现在把单一客户端的请求去映射到不同的服务器上，和“正向代理”方向相反。</p>
+<p>（ 假装有图片 ）</p>
+<h3 id="http服务器-是什么">HTTP服务器 是什么</h3>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[iOS内存管理：autoreleasepool（一）]]></title>
+        <id>https://MJNotMJ.github.io/post/ios-nei-cun-guan-li-autoreleasepoolyi</id>
+        <link href="https://MJNotMJ.github.io/post/ios-nei-cun-guan-li-autoreleasepoolyi">
+        </link>
+        <updated>2019-05-26T07:38:19.000Z</updated>
+        <summary type="html"><![CDATA[<p>在 iOS 的内存管理机制中，ARC 可以帮助开发人员很方便的进行编码，只要遵循 ARC 的规则就无需为内存纠结过多。但是，只有从 MRC 走过的程序员对内存管理才有更深的理解，“谁创建谁释放”的原则一直是那个时代的开发人员所奉行的<strong>黄金准则</strong>。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>在 iOS 的内存管理机制中，ARC 可以帮助开发人员很方便的进行编码，只要遵循 ARC 的规则就无需为内存纠结过多。但是，只有从 MRC 走过的程序员对内存管理才有更深的理解，“谁创建谁释放”的原则一直是那个时代的开发人员所奉行的<strong>黄金准则</strong>。</p>
+<!-- more -->
+<h1 id="ios内存管理autoreleasepool一">iOS内存管理：autoreleasepool（一）</h1>
+<p>大多数开发人员，对于 autoreleasepool 的理解还仅仅停留在知道的层面上，稍微有些研究的可能知道 autoreleasepool 的数据结构以及 push 和 pop 函数的运行原理。接下来我们不会从代码实现上审视它，而是从内存的角度去理解它。如果想在代码实现的角度去研究 autoreleasepool 那么请移步这两篇文章：<a href="https://github.com/Draveness/analyze/blob/master/contents/objc/%E8%87%AA%E5%8A%A8%E9%87%8A%E6%94%BE%E6%B1%A0%E7%9A%84%E5%89%8D%E4%B8%96%E4%BB%8A%E7%94%9F.md">自动释放池的前世今生</a>、<a href="http://blog.sunnyxx.com/2014/10/15/behind-autorelease/">黑幕背后的Autorelease</a></p>
+<h2 id="ios内存管理">iOS内存管理</h2>
+<p>在 iOS 的内存管理机制中，ARC 可以帮助开发人员很方便的进行编码，只要遵循 ARC 的规则就无需为内存纠结过多。但是，只有从 MRC 走过的程序员对内存管理才有更深的理解，“谁创建谁释放”的原则一直是那个时代的开发人员所奉行的<strong>黄金准则</strong>。</p>
+<pre><code class="language--">// ARC 帮助我们为强引用的对象增加引用计数
+self.person = [[[Person alloc] init] retain];
+// ARC 帮助我们在指针丢失之前增加减少引用计数的release
+[self.person release]
+self.person = nil;
+</code></pre>
+<p>这些都是 iOS 的内存管理机制作用的结果，帮助我们管理对象持有关系。但是对于局部变量里的创建的引用以及引用指向的堆内存空间，没有所谓的持有者，那么它的内存归谁去管理呢？答案就是自动释放池来管理了。</p>
+<pre><code class="language--">Person *p = [[[Person alloc] init] autorelease];
+</code></pre>
+<h2 id="线程栈">线程栈</h2>
+<p>局部变量会在当前线程中的线程栈创建，然后线程栈上的指针会指向堆中开辟的对象空间。那么当函数作用域完毕，需要进行栈平衡时，栈收缩的空间就是栈中指针的空间，而真正的实例对象还在堆上，所以 autoreleasepool 就是来管理和释放这些内存的。iOS 的主线程栈 1M 内存，子线程栈 512KB。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-765231de50860e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="auto1_gaitubao_com_watermark.png"></p>
+<h2 id="autoreleasepoolpage">AutoreleasePoolPage</h2>
+<p>AutoreleasePoolPage 是一个 C++ 的类，它负责管理和容纳需要自动释放的对象指针，每个页有4096字节内存，以<strong>双头链表</strong>的形式作为整个释放池的数据结构。之所以用<strong>双头链表</strong>就是方便池子占满后快速的创建新池，还能在收到释放消息后能反向查找<strong>哨兵对象</strong>快速的释放池子。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-dc1e65c8d541bec5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="ayto2_gaitubao_com_watermark.png"></p>
+<p>当 Runloop 结束时会向前一直回溯寻找哨兵对象进行释放，有时甚至跨越好几个 Page 进行。下一篇会结合 Runloop 来详细解释 AutoreleasePool 的释放时机。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[老生常谈的Copy]]></title>
+        <id>https://MJNotMJ.github.io/post/lao-sheng-chang-tan-de-copy</id>
+        <link href="https://MJNotMJ.github.io/post/lao-sheng-chang-tan-de-copy">
+        </link>
+        <updated>2019-05-26T07:37:22.000Z</updated>
+        <summary type="html"><![CDATA[<p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运
+“的意味。下面我就通过图表、代码实践一把。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运
+“的意味。下面我就通过图表、代码实践一把。</p>
+<!-- more -->
+<h1 id="老生常谈的copy">老生常谈的Copy</h1>
+<p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运
+“的意味。下面我就通过图表、代码实践一把。</p>
+<h2 id="非集合类的copy">非集合类的Copy</h2>
+<h3 id="nsstring-的-copy-和-mutablecopy">NSString 的 Copy 和 mutableCopy</h3>
+<pre><code class="language--">NSString *string = @&quot;abc&quot;;
+NSString *stringCopy = [string copy];
+NSMutableString *stringMCopy = [string mutableCopy];
+NSLog(@&quot;string: %p, %p&quot;, string, &amp;string);
+NSLog(@&quot;stringCopy: %p, %p&quot;, stringCopy, &amp;stringCopy);
+NSLog(@&quot;stringMCopy: %p, %p&quot;, stringMCopy, &amp;stringMCopy);
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">string: 0x1022fe078, 0x7fff5d901a48
+stringCopy: 0x1022fe078, 0x7fff5d901a40
+stringMCopy: 0x608000260240, 0x7fff5d901a38
+</code></pre>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-02c047f8ead1b3bc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy1_gaitubao_com_watermark.png"></p>
+<h3 id="nsmutablestring-的-copy-和-mutablecopy">NSMutableString 的 Copy 和 mutableCopy</h3>
+<pre><code class="language--">NSMutableString *string = [NSMutableString stringWithFormat:@&quot;abc&quot;];
+NSString *stringCopy = [string copy];
+NSMutableString *stringMCopy = [string mutableCopy];
+ 
+NSLog(@&quot;string: %p, %p&quot;, string, &amp;string);
+NSLog(@&quot;stringCopy: %p, %p&quot;, stringCopy, &amp;stringCopy);
+NSLog(@&quot;stringMCopy: %p, %p&quot;, stringMCopy, &amp;stringMCopy);
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">string: 0x608000264680, 0x7fff5526aa48
+stringCopy: 0xa000000006362613, 0x7fff5526aa40
+stringMCopy: 0x608000264940, 0x7fff5526aa38
+</code></pre>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-9e68dac435001fbf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy2_gaitubao_com_watermark.png"></p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">copy</th>
+<th style="text-align:center">mutableCopy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">NSString</td>
+<td style="text-align:center">浅</td>
+<td style="text-align:center">深</td>
+</tr>
+<tr>
+<td style="text-align:center">NSMutableString</td>
+<td style="text-align:center">深</td>
+<td style="text-align:center">深</td>
+</tr>
+</tbody>
+</table>
+<h2 id="集合类的copy">集合类的Copy</h2>
+<h3 id="nsarray-的-copy-和-mutablecopy">NSArray 的 Copy 和 mutableCopy</h3>
+<pre><code class="language--">NSString *element_01 = @&quot;abc&quot;;
+NSString *element_02 = @&quot;def&quot;;
+NSString *element_03 = @&quot;ghi&quot;;
+NSArray *array = @[element_01, element_02, element_03];
+NSArray *arrayCopy = [array copy];
+NSMutableArray *arrayMCopy = [array mutableCopy];
+
+NSLog(@&quot;array: %p, %p; array.firstObject: %p&quot;, array, &amp;array, array.firstObject);
+NSLog(@&quot;arrayCopy: %p, %p; arrayCopy.firstObject: %p&quot;, arrayCopy, &amp;arrayCopy, arrayCopy.firstObject);
+NSLog(@&quot;arrayMCopy: %p, %p; arrayMCopy.firstObject: %p&quot;, arrayMCopy, &amp;arrayMCopy, arrayMCopy.firstObject);
+</code></pre>
+<p>打印结果</p>
+<pre><code>array: 0x600000245910, 0x7fff51367a10; array.firstObject: 0x10e898088
+arrayCopy: 0x600000245910, 0x7fff51367a08; arrayCopy.firstObject: 0x10e898088
+arrayMCopy: 0x600000245670, 0x7fff51367a00; arrayMCopy.firstObject: 0x10e898088
+</code></pre>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-dbdb81f8fc03a71b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy3_gaitubao_com_watermark.png"></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-e51bf42c33d4a68d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy4_gaitubao_com_watermark.png"></p>
+<h3 id="nsmutablearray-的-copy-和-mutablecopy">NSMutableArray 的 Copy 和 mutableCopy</h3>
+<pre><code class="language--">NSString *element_01 = @&quot;abc&quot;;
+NSString *element_02 = @&quot;def&quot;;
+NSString *element_03 = @&quot;ghi&quot;;
+NSMutableArray *array = [NSMutableArray arrayWithArray:@[element_01, element_02, element_03]];
+ 
+NSArray *arrayCopy = [array copy];
+NSMutableArray *arrayMCopy = [array mutableCopy];
+ 
+NSLog(@&quot;array: %p, %p; array.firstObject: %p&quot;, array, &amp;array, array.firstObject);
+NSLog(@&quot;arrayCopy: %p, %p; arrayCopy.firstObject: %p&quot;, arrayCopy, &amp;arrayCopy, arrayCopy.firstObject);
+NSLog(@&quot;arrayMCopy: %p, %p; arrayMCopy.firstObject: %p&quot;, arrayMCopy, &amp;arrayMCopy, arrayMCopy.firstObject);
+</code></pre>
+<p>打印结果</p>
+<pre><code>array: 0x6000000460c0, 0x7fff516d3a10; array.firstObject: 0x10e52c088
+arrayCopy: 0x600000046420, 0x7fff516d3a08; arrayCopy.firstObject: 0x10e52c088
+arrayMCopy: 0x600000046000, 0x7fff516d3a00; arrayMCopy.firstObject: 0x10e52c088
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">copy</th>
+<th style="text-align:center">mutableCopy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">NSArray</td>
+<td style="text-align:center">浅</td>
+<td style="text-align:center">深（不完全）</td>
+</tr>
+<tr>
+<td style="text-align:center">NSMutableArray</td>
+<td style="text-align:center">深（不完全）</td>
+<td style="text-align:center">深（不完全）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="对集合类进行完全深复制">对集合类进行完全深复制</h2>
+<p>首先，容器内的元素要遵循 NSCopying 协议，并实现 copyWithZone 方法</p>
+<pre><code>- (instancetype)copyWithZone:(NSZone *)zone {
+    CopyModel *copyModel = [[CopyModel allocWithZone:zone] init];
+    copyModel.title = self.title;
+    copyModel.name = self.name;
+    return copyModel;
+}
+</code></pre>
+<p>在 copy 的时候实现 copyItem 方法</p>
+<pre><code class="language--">NSArray *mAry = [[NSMutableArray alloc] initWithArray:ary copyItems:YES];
+</code></pre>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-03243e91f31fc39e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy5_gaitubao_com_watermark.png"></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[窥探一下ARC机制]]></title>
+        <id>https://MJNotMJ.github.io/post/kui-tan-yi-xia-arc-ji-zhi</id>
+        <link href="https://MJNotMJ.github.io/post/kui-tan-yi-xia-arc-ji-zhi">
+        </link>
+        <updated>2019-05-26T07:36:14.000Z</updated>
+        <summary type="html"><![CDATA[<p>ARC 是 iOS5 推出的，全称叫 ARC(Automatic Reference Counting)，即<strong>自动引用计数</strong>。既然说到“自动”，那就免不了来聊一聊“手动”、“引用计数”这两个概念。对于“手动”的理解可以追溯到 C 语言的内存管理机制，程序员要手动地创建、分配以及释放堆上的内存块，稍有不慎，就会导致内存泄漏。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>ARC 是 iOS5 推出的，全称叫 ARC(Automatic Reference Counting)，即<strong>自动引用计数</strong>。既然说到“自动”，那就免不了来聊一聊“手动”、“引用计数”这两个概念。对于“手动”的理解可以追溯到 C 语言的内存管理机制，程序员要手动地创建、分配以及释放堆上的内存块，稍有不慎，就会导致内存泄漏。</p>
+<!-- more -->
+<h1 id="窥探一下arc机制">窥探一下ARC机制</h1>
+<h2 id="arc概述">ARC概述</h2>
+<p>ARC 是 iOS5 推出的，全称叫 ARC(Automatic Reference Counting)，即<strong>自动引用计数</strong>。既然说到“自动”，那就免不了来聊一聊“手动”、“引用计数”这两个概念。对于“手动”的理解可以追溯到 C 语言的内存管理机制，程序员要手动地创建、分配以及释放堆上的内存块，稍有不慎，就会导致内存泄漏。因为 OC 是 C 语言的超集，早期版本中有和 C 相似的“手动”管理内存的特性（ MRC ），需要程序员手动去retain、release创建的对象，而且必须遵循“谁创建谁释放”的原则。对于“引用计数”的理解，就得在上边所介绍的retain、release方法之上来描述了。OC 没有Java的那种GC机制，JVM 必须有专门的线程去维护垃圾回收。OC 使用的“引用计数”的内存管理机制，通过记录和跟踪某个对象被引用的次数，来管理这个对象的生命周期。retain使引用计数加1，release使引用计数减1，当系统发现当前对象的引用计数为0时，释放该对象的内存。
+本质上，ARC是一种<strong>编译器</strong>行为作用的机制，OC 代码在 ARC 的编译环境下，编译器会自动检测代码并从中增加对于内存管理的代码，即编译器会给我们添加上 retain / release / autorelease 的方法来实现自动管理内存，它只是一种代码静态分析（ Static Analyzer ）工具。</p>
+<h2 id="图解arc实践">图解ARC实践</h2>
+<p>举一个简单的例子：创建一个 Person 类和一个 Book 类，创建各自的实例后，我们让 Person 的实例 p 强持有 Book 的实例 b。并在各自的 dealloc 方法里做一些打印。</p>
+<pre><code class="language--">Person *p = [[Person alloc] init];
+printf(&quot;retain count = %ld\n&quot;,CFGetRetainCount((__bridge CFTypeRef)(p)));
+Book *b = [[Book alloc] init];
+printf(&quot;retain count = %ld\n&quot;,CFGetRetainCount((__bridge CFTypeRef)(b)));
+p.book = b;
+printf(&quot;retain count = %ld\n&quot;,CFGetRetainCount((__bridge CFTypeRef)(p)));
+printf(&quot;retain count = %ld\n&quot;,CFGetRetainCount((__bridge CFTypeRef)(b)));
+    
+NSLog(@&quot;完了&quot;);
+
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">retain count = 1    // 创建了 p
+retain count = 1    // 创建了 b
+retain count = 1    // 创建了 p 强持有 b 后，p 的引用计数不变
+retain count = 2    // 创建了 p 强持有 b 后，b 的引用计数加1
+完了                 
+Person 释放了        // 先走 Person 的 dealloc 方法
+Book 释放了          // 再走 Book 的 dealloc 方法
+</code></pre>
+<p>以上实践就说明，内存管理的本质。当一个对象增加一个强持有时，它的引用计数加1，为的使新增加的这个<strong>强持有</strong>能在本实例的生命周期内随时访问到，不至于出现坏内存访问的崩溃。当这个<strong>强持有</strong>的指针置为nil时，就代表着不会访问本实例，两者已经没有了引用关系，所以这个时候本实例的引用计数会减1。当本实例不被内存中任何实例对象所引用（ 引用计数为0 ）时，也就是本实例不被任何实例对象所需要时，即成为一个“引用孤岛”时，那这个实例就没有了存在的意义，就会被系统回收并释放内存。
+当上述代码走完函数作用域，平衡栈内存时，就会释放 p，再去释放 b。在 MRC 时代，一般都是在一个类中的 dealloc 方法里取释放这个类所持有的实例对象。</p>
+<div align=center>
+<img width="360" height="270" src="https://upload-images.jianshu.io/upload_images/743228-18cec76e4bb01461.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"/>
+<img width="360" height="270" src="https://upload-images.jianshu.io/upload_images/743228-c92e401e8f1ee483.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"/>
+</div>
+<p>上述图片描述了对象在内存模型里的存在状况，任何对象都是通过栈内存中的指针去引用，然后一层一层去引用其他对象实例。程序员都是在栈内存环境下通过栈指针的索引来拨开一层一层的引用访问到相应对象的内存空间。</p>
+<div align=center>
+<img width="360" height="270" src="https://upload-images.jianshu.io/upload_images/743228-ed6465afbab108c5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"/>
+<img width="360" height="270" src="https://upload-images.jianshu.io/upload_images/743228-3f64010b2c7a8353.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"/>
+</div>
+<p>上述图片描述了循环引用的对象内存状况，当栈内存中的 <code>*p</code> 指针要置空时，堆内的两个实例对象和还在相互<strong>强引用</strong>着，两者的引用计数都不可能为0。这个时候栈指针已经丢失了它所引用着的堆内存中的空间，可是堆内存中的两块空间不可能释放，于是造成了<strong>内存泄漏</strong>，堆内存中的那块空间在程序运行期间不可能被释放，除非重新初始化程序。所以，我们会使用<strong>弱引用</strong>来保证既能访问到想要的实例，又不增加此实例的引用计数。当此实例被释放后，弱引用指针通过 Runtime 自动置空，也不用担心给一个空对象发送消息导致程序崩溃。这就是日常开发中解决循环引用的本质手段。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[调戏一下ARC机制]]></title>
+        <id>https://MJNotMJ.github.io/post/diao-xi-yi-xia-arc-ji-zhi</id>
+        <link href="https://MJNotMJ.github.io/post/diao-xi-yi-xia-arc-ji-zhi">
+        </link>
+        <updated>2019-05-26T07:34:53.000Z</updated>
+        <summary type="html"><![CDATA[<p>能不能主动操作内存来进行访问呢？到底能不能在 ARC 下主动释放我们想要释放的对象？这是个很值得思考的问题。于是，我们可以借助 ARC 的规则，“借力打力”实践一下，挑战 ARC 的自动释放内存的机制。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>能不能主动操作内存来进行访问呢？到底能不能在 ARC 下主动释放我们想要释放的对象？这是个很值得思考的问题。于是，我们可以借助 ARC 的规则，“借力打力”实践一下，挑战 ARC 的自动释放内存的机制。</p>
+<!-- more -->
+<h1 id="调戏一下arc机制">调戏一下ARC机制</h1>
+<p>通过上一篇<a href="">窥探一下ARC机制</a>了解了 iOS 基本的内存管理机制，在 ARC 编译环境下，我们不能手动的给对象发送 release、retain 消息，我们只要遵循 ARC 下的机制，合理地创建对象，释放对象的引用指针，那么编译器会很好的帮我们添加代码，实现轻松管理内存。</p>
+<p>能不能主动操作内存来进行访问呢？到底能不能在 ARC 下主动释放我们想要释放的对象？这是个很值得思考的问题。于是，我们可以借助 ARC 的规则，“借力打力”实践一下，挑战 ARC 的自动释放内存的机制。</p>
+<h2 id="随意访问内存空间">随意访问内存空间</h2>
+<p>在<a href="">从硬件层面理解指针</a>这篇文章里我们已经很详细的讲述了<strong>对象</strong>和<strong>指针</strong>之间的物理关系。也就是说，我们只要知道堆中<strong>某个对象的数据类型，以及对象的首地址</strong>，我们就可以随意对其内部的数据进行访问。只不过之前我们都是通过栈中指针的引用来一层层索引我们想要访问的对象，这时候 ARC 根据引用计数的规则帮我们管理内存。现在，我们知道原理之后，通过记录某个指针指向堆中对象首地址的真实值，来访问这个对象。</p>
+<p>场景1：我们创建两个控制器 PO_1_ViewController 、 PO_2_ViewController，PO_1_ViewController 上有两个 button，在 PO_1_ViewController 之上 push 进入 PO_2_ViewController 控制器，并在 PO_2_ViewController 中改变之前 PO_1_ViewController 控制器 button 的 Title。</p>
+<p>以上是一个典型的反向传值的问题，我们可以用代理、block、通知中心等等方法去实现。下面我们就要实践一下不通过 Cocoa 提供的这些机制，随意访问内存并修改值。</p>
+<pre><code class="language--">// 在控制器 PO_1_ViewController 中
+unsigned long int vc_address = (unsigned long int)self;
+NSUserDefaults *defaults1 = [NSUserDefaults standardUserDefaults];
+// double 是8个字节
+[defaults1 setDouble:(double)vc_address forKey:@&quot;vc_address&quot;];
+[defaults1 synchronize];
+
+</code></pre>
+<p>因为64位系统的指针都是8个字节，通过 unsigned long int 的数据结构去记录这个指针的真实地址，并存储到 NSUserDefaults 里供全局访问。</p>
+<pre><code class="language--">// 在控制器 PO_2_ViewController 中
+// 拿出 控制器的地址
+double vc_address = [defaults doubleForKey:@&quot;vc_address&quot;];
+PO_1_ViewController *vc = (PO_1_ViewController *)[[ReplaceObject alloc] init];
+unsigned long int replace_address = (unsigned long int)vc;
+void *dsdsdsd_address = &amp;vc;
+*(unsigned long int *)dsdsdsd_address = (unsigned long int)vc_address;
+[vc.button1 setTitle:@&quot;改变了&quot; forState:UIControlStateNormal];
+NSLog(@&quot;================修改成功，下面杀死替死鬼==============&quot;);
+*(unsigned long int *)dsdsdsd_address = (unsigned long int)replace_address;
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">替死鬼 &lt;ReplaceObject: 0x60400001a480&gt; 创建了
+================修改成功，下面杀死替死鬼==============
+替死鬼 &lt;ReplaceObject: 0x60400001a480&gt; 杀死了
+</code></pre>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-eb69184133bc82ac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="调戏ARC1_gaitubao_com_watermark.png"></p>
+<p>在 PO_2_ViewController 中拿出可以全局访问的 PO_1_ViewController 实例的地址。然后通过 ReplaceObject “替死鬼”类获得一个 PO_1_ViewController 的数据结构。并把这个局部变量的指针强行指向我们之前记录的 PO_1_ViewController 实例的地址。这样我们就完成了“只要知道堆中某个对象的数据类型，以及对象的首地址”的操作。这个时候拿着这两个信息，我们就可以通过 setTitle 方法来修改 PO_1_ViewController 实例中 button 的 Title 了。但是因为 ARC 的机制我们修改完之后不能扔下就不管了，这样 ARC 会在函数作用域完之后释放局部变量指向的堆空间，也就是说会把我们之前的 PO_1_ViewController 实例释放掉。所以修改完之后，我们把我们之前创建的“替死鬼”类的引用还回来，让 ARC 机制去释放这个“替死鬼”，从而避免了混乱。这样我们就在 ARC 的“眼皮”底线实现了对任意内存中存在的实例的访问。</p>
+<h2 id="强制释放某个对象">强制释放某个对象</h2>
+<p>有时候在实际开发中我们经常为一些循环引用导致的内存泄漏，甚至是逻辑混乱而大伤头脑，尤其是一些循环引用的圈比较大的情况下，排查起来非常困难。当然，形成这些情况的根本原因就是自身对于内存管理的理解使用不太透彻，导致编码出现问题；也可能是在集成三方库的过程中一些黑盒代码处理不当引起的循环（ 笔者曾经遇到过一次因为开源代码中的宏定义引起的引用循环 ）。所以，在 ARC 编译环境下，我们能强制释放某个对象，打破循环链条，就是一个“奇巧淫技”了！（ 不过不提倡使用，还是乖乖按规矩来的好 ）</p>
+<p>场景2：还是上边的两个控制器，PO_1_ViewController 中有一个强引用的指针 someone1，我们要在 PO_2_ViewController 中强制释放它。</p>
+<pre><code class="language--">// 在控制器 PO_1_ViewController 中
+// 一个强引用的指针  引用着一个 Person 实例对象
+self.someone1 = [[Person alloc] init];
+// 64位系统的 对象指针占8个字节。
+// 用 unsigned long int 这个去记录指针里的内容（即实例对象的首地址）
+unsigned long int someone1_address = (unsigned long int)self.someone1;
+// 这时候打印这个 无符号长整型 转换成16进制后  和  NSLog(@&quot;%@&quot;,self.someone1)打印的对象首地址一样
+// 也就是说，我已经记录下 这个实例对象 的首地址
+NSLog(@&quot;someone1实例---%@&quot;,self.someone1);
+NSLog(@&quot;someone1实例的首地址（10进制表示）---%lu&quot;,someone1_address);
+NSLog(@&quot;=====================================================&quot;);
+NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+// double 是8个字节
+[defaults setDouble:(double)someone1_address forKey:@&quot;address&quot;];
+[defaults synchronize];
+</code></pre>
+<p>还是之前的套路，创建一个 Person 实例，并在 PO_1_ViewController 中强持有它。然后记录这个指针的在堆中的真实地址，并存储到 NSUserDefaults 里供全局访问。</p>
+<pre><code class="language--">// 在控制器 PO_2_ViewController 中
+NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+double address = [defaults doubleForKey:@&quot;address&quot;];
+Person *someone2;
+NSLog(@&quot;someone2实例的指针的地址---%p&quot;,&amp;someone2);
+void *someone2_address = &amp;someone2;
+// 这个值就是 指针里的内容  即对象的首地址
+NSLog(@&quot;someone2实例---%@&quot;,someone2);
+NSLog(@&quot;someone2实例的首地址（10进制表示)---%lu&quot;,*(unsigned long int *)someone2_address);
+*(unsigned long int *)someone2_address = (unsigned long int)address;
+NSLog(@&quot;%@&quot;,someone2);
+self.someone2 = someone2;
+NSLog(@&quot;名字----%@&quot;,self.someone2.name);
+</code></pre>
+<p>在 PO_2_ViewController 中拿出 Person 实例的真实地址，并创建一个 Person 的数据结构 someone2，然后还是之前的套路，强制 someone2 指向之前记录的 Person 实例的真实地址。并进行验证性打印 Person 实例的 name 属性，发现就是我们之前创建的那个 Person 实例。之后把获取的这个局部变量的指针被 PO_2_ViewController 强引用起来，然后在 POP 控制器，在 PO_1_ViewController 中看看 Person 实例还存不存在？（ 点击button2 打印 self.someone1 ）</p>
+<p>打印结果</p>
+<pre><code class="language--">PO_1 控制器 &lt;PO_1_ViewController: 0x7fc7274628a0&gt; 创建了
+Person类的实例 &lt;Person: 0x600000011830&gt; 初始化了
+someone1实例---&lt;Person: 0x600000011830&gt;
+someone1实例的首地址（10进制表示）---105553116338224
+=====================================================
+页面出现---&lt;Person: 0x600000011830&gt;
+点击了button1
+PO_2 控制器 &lt;PO_2_ViewController: 0x7fc727508a40&gt; 创建了
+someone2实例的指针的地址---0x7ffee983f238
+someone2实例---(null)
+someone2实例的首地址（10进制表示)---0
+&lt;Person: 0x600000011830&gt;
+名字----name
+// POP 控制器后
+页面出现---&lt;Person: 0x600000011830&gt;
+PO_2 控制器 &lt;PO_2_ViewController: 0x7fc727508a40&gt; 销毁了
+Person类的实例 &lt;Person: 0x600000011830&gt; 释放了
+</code></pre>
+<p>这个时候点击 button2 发现崩溃</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-96492f9dd1265c3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="调戏ARC2_gaitubao_com_watermark.png"></p>
+<h2 id="一个大胆的猜想">一个大胆的猜想</h2>
+<p>上边两个场景让我们在 ARC 的机制下“很皮”地玩了一下内存，那么问题来了。现在我们可以记录了实例的内存地址，但是还原这个实例的时候我们还是得引入这个类的头文件来创建数据结构接这个地址。我们能不能在类的 load 装载方法里，把这个类的对象地址也记录下来呢？到时候一个实例对象的地址，一个类地址，我们就可以在任意位置没有耦合地随意访问了，当然前提是内存中已经创建了对应类的实例对象了。</p>
+<p>话又说回来，这样的安全性就没办法保证了，所以留待以后探究啦！</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[从硬件层面理解指针]]></title>
+        <id>https://MJNotMJ.github.io/post/cong-ying-jian-ceng-mian-li-jie-zhi-zhen</id>
+        <link href="https://MJNotMJ.github.io/post/cong-ying-jian-ceng-mian-li-jie-zhi-zhen">
+        </link>
+        <updated>2019-05-26T07:31:22.000Z</updated>
+        <summary type="html"><![CDATA[<p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。</p>
+<!-- more -->
+<h1 id="从硬件层面理解指针一">从硬件层面理解指针（一）</h1>
+<h2 id="指针的硬件基础">指针的硬件基础</h2>
+<p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。要完成上述三种操作，会有一系列的计算机硬件结构为CPU提供支持：CPU内的寄存器为数据提供操作空间；一二级缓存为CPU高速运算提供支持；数据总线、地址总线为CPU提供数据通道；ROM、RAM为CPU提供数据资料……</p>
+<p>其中<code>寻址</code>作为一个动作几乎贯彻始终：寄存器有通用寄存器、程序计数器等等，CPU里的控制器需要知道它们的地址以便取值运算；缓存需要命中当前CPU急需的数据资源，当然也必须知道数据地址来进行数据页的置换；总线的宽度决定了能访问到的地址长度，总线的大小决定着计算机的寻址能力的大小；ROM、RAM作为数据的存储单元，唯一数据对应唯一地址，更是在硬件层面保证寻址正确的基础。</p>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-91ccc3abf7ee6486.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针2_gaitubao_com_watermark.png"></p>
+<p>在支持64位的寻址的计算机中，每一个1字节的存储单元都有一个8个字节长度的物理地址，一般用16进制来表示。大学计算机组成原理中的“3-8译码器”就是一个最最基础的可以寻址取值的内存模型，通过3个电线的高低电平组合，来生成2的三次方个不同地址。而指针就是<strong>把某个内存单元的地址作为数据，存储到另外一个内存单元。</strong></p>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-5b5960fe104ab1a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针3_gaitubao_com_watermark.png"></p>
+<p>上图就是把 0x001122AAEE3377FD 的内存地址放到了 0x001122AAEE3377F1 ~ 0x001122AAEE3377F8 连续8个内存单元中，那么把这8个内存单元看做整体就可以表示为 0x001122AAEE3377FD 的指针变量。</p>
+<h2 id="指针的使用">指针的使用</h2>
+<p>指针，不仅把硬件层面上计算机特性体现在抽象的软件编码上，而且由于指针的引入还大大提高了编程人员的编码灵活性。在C语言中，指针被称为“C语言的精华”。</p>
+<pre><code class="language--">int *a;
+int m = 300;
+a = &amp;m;
+    
+NSLog(@&quot;%d&quot;,*a);
+NSLog(@&quot;%p&quot;,a);
+NSLog(@&quot;%p&quot;,&amp;a);
+NSLog(@&quot;%p&quot;,&amp;(*a));
+    
+    
+NSLog(@&quot;%lu&quot;,sizeof(*a));
+NSLog(@&quot;%lu&quot;,sizeof(a));
+NSLog(@&quot;%lu&quot;,sizeof(&amp;a));
+NSLog(@&quot;%lu&quot;,sizeof(&amp;(*a)));
+    
+NSLog(@&quot;%lu&quot;,sizeof(m));
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">300             // int型的指针变量实际指向的int值
+0x7ffeefbfeba4  // 指针变量存储的数值，即实际int值的首地址
+0x7ffeefbfeba8  // 指针变量的地址
+0x7ffeefbfeba4  // 实际指向的int值的地址，即指针变量存贮的数值（同第二个，只不过反过来描述）
+4               // 实际指向的int值的长度，即64位系统下int型长度
+8               // 存储指针变量长度，用了8个字节的存储单元
+8               // 指针变量的地址长度，64位系统下都是8个字节
+8               // 存储指针变量长度
+4               // m的长度，即整型的长度
+</code></pre>
+<pre><code class="language--">int *c;
+int n;
+c = &amp;n;
+*c = 100;
+NSLog(@&quot;%d&quot;,*c);
+    
+int *b;
+*b = 100;       // 会崩溃
+NSLog(@&quot;%d&quot;,*b);
+</code></pre>
+<p>看上边的两段代码，第一段是创建一个指针变量和一个数值变量，并把这个数值变量的地址赋给指针变量；第二段代码只有一个指针变量，然后直接拿着这个指针变量的地址去赋数值，在编译的时候会有一个警告：未初始化的指针变量，运行的时候直接 BAD_ACCESS 崩溃了；由此可见，指针的赋值，必须有一个已经确切知道内存地址的变量来赋，不能想当然的意味定义好了一个指针拿来随便指向。</p>
+<pre><code class="language--">int *d = (int *)600;
+NSLog(@&quot;%p&quot;,d);
+NSLog(@&quot;%p&quot;,&amp;d);
+NSLog(@&quot;%d&quot;,*d);   // 会崩溃
+    
+int *e;
+e = (int *)600;
+NSLog(@&quot;%p&quot;,e);
+NSLog(@&quot;%p&quot;,&amp;e);
+NSLog(@&quot;%d&quot;,*e);   // 会崩溃
+</code></pre>
+<p>看上边的两段代码，在验证 int *d = (int *)600 的赋值语句其实是对声明的指针变量进行强制赋值，赋上某个指向整型变量空间的地址。当我们通过<code>*d</code>去访问这个地址空间真实的int数值时，崩溃。为什么？？？猜测大概是因为我们强行赋值的600已经超过操作系统指定的用户空间了。</p>
+<pre><code class="language--">int *c;
+int n;
+c = &amp;n;
+*c = 2147483647;  // 2147483647为int最大值 原码为0111 1111 1111 1111 1111 1111 1111 1111
+NSLog(@&quot;%d&quot;,*c);
+      
+int d = *(int *)c;
+short e = *(short *)c;
+
+NSLog(@&quot;%d&quot;,d);
+NSLog(@&quot;%d&quot;,e);
+</code></pre>
+<p><img src="https://upload-images.jianshu.io/upload_images/743228-1207ff7e9c8c22bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="指针4_gaitubao_com_watermark.png"></p>
+<p>看上边的代码和打印，我们可以清楚的看到为什么e的值为-1，这就是通过指针的运算，强制用short类型的2字节数据结构去截取<code>*c</code>变量。因为在计算机内，基本数据结构的存储是<strong>小端字节序</strong>，所以通过指针截取到的是前两个字节，即 ff ff ，按short读取就是十进制的-1。</p>
+<p><strong>（字符指针，未完待续）</strong></p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[从编译角度理解变量]]></title>
         <id>https://MJNotMJ.github.io/post/cong-bian-yi-jiao-du-li-jie-bian-liang</id>
