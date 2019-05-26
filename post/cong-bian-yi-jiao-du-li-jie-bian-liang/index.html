@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1558854857919">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1558855708785">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
 
@@ -30,7 +30,7 @@
   <div class="top-container" data-aos="fade-right">
     <div class="top-header-container">
       <a class="site-title-container" href="https://MJNotMJ.github.io">
-        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1558854857919" class="site-logo">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1558855708785" class="site-logo">
         <h1 class="site-title">MJNotMJ</h1>
       </a>
       <div class="menu-btn" @click="menuVisible = !menuVisible">
@@ -95,13 +95,18 @@
             <h2 class="post-title">从编译角度理解变量</h2>
             <div class="post-date">2019-05-26</div>
             
+              <div class="feature-container" style="background-image: url('https://MJNotMJ.github.io/post-images/cong-bian-yi-jiao-du-li-jie-bian-liang.png')">
+              </div>
+            
             <div class="post-content">
-              <h1 id="从编译角度理解变量">从编译角度理解变量</h1>
-<p>##编译</p>
+              <p>计算机可以看做是一个由数以万亿的晶体管组成、通过简单逻辑的叠加组合来处理复杂事务、提供抽象的输入输出接口的模型。以上一连串的定语修饰，可以直指计算机最基础的运行机制<strong>高低电平</strong>，也就是抽象符号的<strong>0和1</strong></p>
+<!-- more -->
+<h1 id="从编译角度理解变量">从编译角度理解变量</h1>
+<h2 id="编译">编译</h2>
 <p>计算机可以看做是一个由数以万亿的晶体管组成、通过简单逻辑的叠加组合来处理复杂事务、提供抽象的输入输出接口的模型。以上一连串的定语修饰，可以直指计算机最基础的运行机制<strong>高低电平</strong>，也就是抽象符号的<strong>0和1</strong></p>
 <p>我们都知道最开始的计算机是通过“打孔带”在进行编程的，之后通过一些列的进步演化到汇编指令，再到我们现在熟知的高级语言（C、Java），并由于场景的多样化还出现了直译型的高级语言（Python、JavaScript）。语言的演化史从某种角度来理解可以看做是人类和机器沟通的演化史，在这个“沟通”过程中，<strong>编译</strong>这个概念充当了两者的使者。在编译型语言里有“编译器”，在直译型语言里有“翻译器”，无论这个使者以什么样的形式存在，它们本质的任务都是相同的，都要把高级语言翻译成能直接操控计算机硬件的机器语言，也就是一串的01码。</p>
 <p>老生常谈，编译的过程分为4个步骤：<code>预处理</code>、<code>编译</code>、<code>汇编</code>、<code>链接</code>。其中高级代码通过<strong>预处理</strong>还是高级代码，只不过有一些宏的替换和编译关键字的替换以及文件的导入等；这时候高级代码通过<strong>编译</strong>形成汇编代码，也就是汇编助记符组成的文件；接下来这些汇编文件通过<strong>汇编</strong>最终变成了可以直接在机器中运行的01机器码；最后这些可以直接运行的机器码会通过<strong>链接</strong>来和内置的编译好的库文件进行整合，整合过程使用到了符号表和重定向，那产出物就是一份完成的可执行文件。</p>
-<p>##变量</p>
+<h2 id="变量">变量</h2>
 <pre><code class="language--">int a;
 int b;
 int yourName;
@@ -183,15 +188,6 @@ if (flag) {
 
             </div>
             
-            
-              <div class="next-post">
-                <div class="next">下一篇</div>
-                <a href="https://MJNotMJ.github.io/post/hello-gridea">
-                  <h3 class="post-title">
-                    Hello Gridea
-                  </h3>
-                </a>
-              </div>
             
 
             
