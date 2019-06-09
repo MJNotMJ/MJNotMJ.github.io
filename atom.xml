@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://MJNotMJ.github.io</id>
     <title>MJNotMJ</title>
-    <updated>2019-05-26T20:14:39.023Z</updated>
+    <updated>2019-06-09T09:02:21.603Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://MJNotMJ.github.io"/>
     <link rel="self" href="https://MJNotMJ.github.io/atom.xml"/>
@@ -10,6 +10,117 @@
     <logo>https://MJNotMJ.github.io/images/avatar.png</logo>
     <icon>https://MJNotMJ.github.io/favicon.ico</icon>
     <rights>All rights reserved 2019, MJNotMJ</rights>
+    <entry>
+        <title type="html"><![CDATA[MJRefresh 源码分析< 1 >]]></title>
+        <id>https://MJNotMJ.github.io/post/mjrefresh-yuan-ma-fen-xi-less-1-greater</id>
+        <link href="https://MJNotMJ.github.io/post/mjrefresh-yuan-ma-fen-xi-less-1-greater">
+        </link>
+        <updated>2019-06-09T08:58:53.000Z</updated>
+        <summary type="html"><![CDATA[<h1 id="mjrefresh-源码分析-1">MJRefresh 源码分析&lt; 1 &gt;</h1>
+<p>第1回，先粗略分析一波 Header 的实现原理</p>
+]]></summary>
+        <content type="html"><![CDATA[<h1 id="mjrefresh-源码分析-1">MJRefresh 源码分析&lt; 1 &gt;</h1>
+<p>第1回，先粗略分析一波 Header 的实现原理</p>
+<!-- more -->
+<h2 id="懒加载">懒加载</h2>
+<p>重写属性的 get 方法</p>
+<pre><code>- (NSArray *)examples {
+    if (!_examples) {
+        // _examples 的相关初始化动作
+    }
+    return _examples;
+}
+
+</code></pre>
+<p>static 静态的，在堆栈的全局数据区，只声明一次，每次访问内存地址不变，且程序初始化的时候默认值是0。但是如果以局部的方式声明，除非显式的声明为0，那这个静态变量的值是随机的。（为什么？？？）</p>
+<p>const 常量。一经初始化就不能被改变。那我怎么知道我被初始化了？比如，默认是 0，那我咋知道这个默认值能不能改变。</p>
+<pre><code>static const char MJRefreshHeaderKey = '\0';
+
+</code></pre>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" checked="" disabled="" type="checkbox" id="task-item-3719044"><label class="task-list-item-label" for="task-item-3719044"> 学会用 MarkDown 语法画思维导图</label></li>
+</ul>
+<pre><code>graph TD
+A0[MJRefreshNormalHeader]
+A0--&gt;B0[MJRefreshStateHeader]
+B0--&gt;C0[MJRefreshHeader]
+C0--&gt;D0[MJRefreshComponent]
+D0--&gt;E0[UIView]
+
+A1[MJRefreshBackNormalFooter]
+A1--&gt;B1[MJRefreshBackStateFooter]
+B1--&gt;C1[MJRefreshBackFooter]
+C1--&gt;D1[MJRefreshFooter]
+D1--&gt;D0
+</code></pre>
+<pre><code>NSString *const MJRefreshHeaderLastUpdatedTimeKey = @&quot;MJRefreshHeaderLastUpdatedTimeKey&quot;;
+
+</code></pre>
+<p>getter=isRefreshing 是个什么玩意儿？？</p>
+<pre><code>/** 是否正在刷新 */
+@property (assign, nonatomic, readonly, getter=isRefreshing) BOOL refreshing;
+
+</code></pre>
+<p>NS_REQUIRES_SUPER</p>
+<p>ns_requires_super</p>
+<p>子类覆盖了该方法但是没有调用 super，就会有警告</p>
+<h2 id="mjrefreshcomponent">MJRefreshComponent</h2>
+<h3 id="基类的作用">基类的作用</h3>
+<ul>
+<li>声明控件的刷新状态</li>
+<li>声明几种刷新状态的回调 Block</li>
+<li>声明刷新流程中的几个方法</li>
+<li>交给子类去实现的方法</li>
+</ul>
+<h3 id="m-文件的实现方式">.m 文件的实现方式</h3>
+<p>持有一个 UIPanGestureRecognizer 手势识别</p>
+<p>弱持有了 scrollView ，这个 父View</p>
+<p>监听了：
+scrollView 的 contentOffset</p>
+<p>scrollView 的 contentSize</p>
+<p>panGestureRecognizer 的 UIGestureRecognizerState state(基类里的属性);</p>
+<pre><code>[被监听者 addObserver:监听者 forKeyPath:被监听者的某个属性 options:监听策略 context:附属信息];
+</code></pre>
+<p>在监听的触发方法里 把监听结果回调出去，给子类去实现相应的结果的处理。</p>
+<ul>
+<li>scrollViewContentOffsetDidChange</li>
+<li>scrollViewContentSizeDidChange</li>
+<li>scrollViewPanStateDidChange</li>
+</ul>
+<p>在 这个 UIView 方法 willMoveToSuperview 里添加了监听。有点像 View 的生命周期方法。</p>
+<p>MJRefreshDispatchAsyncOnMainQueue 采用这种 宏 的形式，把一些方法或者代码块放到主线程主队列里去等待实现。</p>
+<h2 id="mjrefreshheader">MJRefreshHeader</h2>
+<p>继承了 MJRefreshComponent，实现父类留有的接口</p>
+<h3 id="都干了啥">都干了啥？</h3>
+<ul>
+<li>布局，调整UI</li>
+<li>统的 NSUserDefaults 记录了刷新的时间</li>
+<li>监听的数据 处理 本样式的刷新流程的逻辑，并且设置本样式的 states</li>
+</ul>
+<h3 id="m-文件的实现方式-2">.m 文件的实现方式</h3>
+<p>父类监听的 scrollView 的变化扔出来给 Header 子类去处理</p>
+<ul>
+<li>(void)setState:(MJRefreshState)state;</li>
+</ul>
+<h2 id="mjrefreshstateheader">MJRefreshStateHeader</h2>
+<h3 id="都干了啥-2">都干了啥？</h3>
+<ul>
+<li>相当于耦合了一些业务层面的东西，时间的设置与赋值在这里</li>
+<li>不同状态下UI的展示</li>
+</ul>
+<p>一段比较诡异的代码，get 方法取了值，然后去 set,就是因为get是取的父类的实现的值，set时子类（自身）重新实现了一下 set方法。</p>
+<pre><code>// 重新设置key（重新显示时间）
+    self.lastUpdatedTimeKey = self.lastUpdatedTimeKey;
+
+</code></pre>
+<h2 id="mjrefreshnormalheader">MJRefreshNormalHeader</h2>
+<h3 id="都干了啥-3">都干了啥？</h3>
+<ul>
+<li>UI 组件的设置，区别于 GIF 图的Header</li>
+<li>一层层实现 prepare placeSubviews setState 等父类的方法来达到逻辑闭环且一层层扩展的目的</li>
+</ul>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[iOS 排序算法]]></title>
         <id>https://MJNotMJ.github.io/post/ios-pai-xu-suan-fa</id>
