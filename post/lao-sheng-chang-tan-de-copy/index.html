@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1573562729000">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1573632054859">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
 
@@ -30,7 +30,7 @@
   <div class="top-container" data-aos="fade-right">
     <div class="top-header-container">
       <a class="site-title-container" href="https://MJNotMJ.github.io">
-        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1573562729000" class="site-logo">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1573632054859" class="site-logo">
         <h1 class="site-title">MJNotMJ</h1>
       </a>
       <div class="menu-btn" @click="menuVisible = !menuVisible">
@@ -99,11 +99,11 @@
               </div>
             
             <div class="post-content">
-              <p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运
+              <p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运<br>
 “的意味。下面我就通过图表、代码实践一把。</p>
 <!-- more -->
 <h1 id="老生常谈的copy">老生常谈的Copy</h1>
-<p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运
+<p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运<br>
 “的意味。下面我就通过图表、代码实践一把。</p>
 <h2 id="非集合类的copy">非集合类的Copy</h2>
 <h3 id="nsstring-的-copy-和-mutablecopy">NSString 的 Copy 和 mutableCopy</h3>
@@ -119,7 +119,7 @@ NSLog(@&quot;stringMCopy: %p, %p&quot;, stringMCopy, &amp;stringMCopy);
 stringCopy: 0x1022fe078, 0x7fff5d901a40
 stringMCopy: 0x608000260240, 0x7fff5d901a38
 </code></pre>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-02c047f8ead1b3bc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy1_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="1"><img src="https://upload-images.jianshu.io/upload_images/743228-02c047f8ead1b3bc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy1_gaitubao_com_watermark.png"></figure>
 <h3 id="nsmutablestring-的-copy-和-mutablecopy">NSMutableString 的 Copy 和 mutableCopy</h3>
 <pre><code class="language--">NSMutableString *string = [NSMutableString stringWithFormat:@&quot;abc&quot;];
 NSString *stringCopy = [string copy];
@@ -134,7 +134,7 @@ NSLog(@&quot;stringMCopy: %p, %p&quot;, stringMCopy, &amp;stringMCopy);
 stringCopy: 0xa000000006362613, 0x7fff5526aa40
 stringMCopy: 0x608000264940, 0x7fff5526aa38
 </code></pre>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-9e68dac435001fbf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy2_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="2"><img src="https://upload-images.jianshu.io/upload_images/743228-9e68dac435001fbf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy2_gaitubao_com_watermark.png"></figure>
 <table>
 <thead>
 <tr>
@@ -174,8 +174,8 @@ NSLog(@&quot;arrayMCopy: %p, %p; arrayMCopy.firstObject: %p&quot;, arrayMCopy, &
 arrayCopy: 0x600000245910, 0x7fff51367a08; arrayCopy.firstObject: 0x10e898088
 arrayMCopy: 0x600000245670, 0x7fff51367a00; arrayMCopy.firstObject: 0x10e898088
 </code></pre>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-dbdb81f8fc03a71b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy3_gaitubao_com_watermark.png"></p>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-e51bf42c33d4a68d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy4_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="3"><img src="https://upload-images.jianshu.io/upload_images/743228-dbdb81f8fc03a71b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy3_gaitubao_com_watermark.png"></figure>
+<figure data-type="image" tabindex="4"><img src="https://upload-images.jianshu.io/upload_images/743228-e51bf42c33d4a68d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy4_gaitubao_com_watermark.png"></figure>
 <h3 id="nsmutablearray-的-copy-和-mutablecopy">NSMutableArray 的 Copy 和 mutableCopy</h3>
 <pre><code class="language--">NSString *element_01 = @&quot;abc&quot;;
 NSString *element_02 = @&quot;def&quot;;
@@ -227,7 +227,7 @@ arrayMCopy: 0x600000046000, 0x7fff516d3a00; arrayMCopy.firstObject: 0x10e52c088
 <p>在 copy 的时候实现 copyItem 方法</p>
 <pre><code class="language--">NSArray *mAry = [[NSMutableArray alloc] initWithArray:ary copyItems:YES];
 </code></pre>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-03243e91f31fc39e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy5_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="5"><img src="https://upload-images.jianshu.io/upload_images/743228-03243e91f31fc39e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy5_gaitubao_com_watermark.png"></figure>
 
             </div>
             

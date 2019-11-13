@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1573562729000">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1573632054859">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
 
@@ -30,7 +30,7 @@
   <div class="top-container" data-aos="fade-right">
     <div class="top-header-container">
       <a class="site-title-container" href="https://MJNotMJ.github.io">
-        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1573562729000" class="site-logo">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1573632054859" class="site-logo">
         <h1 class="site-title">MJNotMJ</h1>
       </a>
       <div class="menu-btn" @click="menuVisible = !menuVisible">
@@ -116,10 +116,10 @@ self.person = nil;
 </code></pre>
 <h2 id="线程栈">线程栈</h2>
 <p>局部变量会在当前线程中的线程栈创建，然后线程栈上的指针会指向堆中开辟的对象空间。那么当函数作用域完毕，需要进行栈平衡时，栈收缩的空间就是栈中指针的空间，而真正的实例对象还在堆上，所以 autoreleasepool 就是来管理和释放这些内存的。iOS 的主线程栈 1M 内存，子线程栈 512KB。</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-765231de50860e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="auto1_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="1"><img src="https://upload-images.jianshu.io/upload_images/743228-765231de50860e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="auto1_gaitubao_com_watermark.png"></figure>
 <h2 id="autoreleasepoolpage">AutoreleasePoolPage</h2>
 <p>AutoreleasePoolPage 是一个 C++ 的类，它负责管理和容纳需要自动释放的对象指针，每个页有4096字节内存，以<strong>双头链表</strong>的形式作为整个释放池的数据结构。之所以用<strong>双头链表</strong>就是方便池子占满后快速的创建新池，还能在收到释放消息后能反向查找<strong>哨兵对象</strong>快速的释放池子。</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-dc1e65c8d541bec5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="ayto2_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="2"><img src="https://upload-images.jianshu.io/upload_images/743228-dc1e65c8d541bec5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="ayto2_gaitubao_com_watermark.png"></figure>
 <p>当 Runloop 结束时会向前一直回溯寻找哨兵对象进行释放，有时甚至跨越好几个 Page 进行。下一篇会结合 Runloop 来详细解释 AutoreleasePool 的释放时机。</p>
 
             </div>

@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1573562729000">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1573632054859">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
 
@@ -30,7 +30,7 @@
   <div class="top-container" data-aos="fade-right">
     <div class="top-header-container">
       <a class="site-title-container" href="https://MJNotMJ.github.io">
-        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1573562729000" class="site-logo">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1573632054859" class="site-logo">
         <h1 class="site-title">MJNotMJ</h1>
       </a>
       <div class="menu-btn" @click="menuVisible = !menuVisible">
@@ -105,9 +105,9 @@
 <h2 id="指针的硬件基础">指针的硬件基础</h2>
 <p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。要完成上述三种操作，会有一系列的计算机硬件结构为CPU提供支持：CPU内的寄存器为数据提供操作空间；一二级缓存为CPU高速运算提供支持；数据总线、地址总线为CPU提供数据通道；ROM、RAM为CPU提供数据资料……</p>
 <p>其中<code>寻址</code>作为一个动作几乎贯彻始终：寄存器有通用寄存器、程序计数器等等，CPU里的控制器需要知道它们的地址以便取值运算；缓存需要命中当前CPU急需的数据资源，当然也必须知道数据地址来进行数据页的置换；总线的宽度决定了能访问到的地址长度，总线的大小决定着计算机的寻址能力的大小；ROM、RAM作为数据的存储单元，唯一数据对应唯一地址，更是在硬件层面保证寻址正确的基础。</p>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-91ccc3abf7ee6486.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针2_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="1"><img src="https://upload-images.jianshu.io/upload_images/743228-91ccc3abf7ee6486.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针2_gaitubao_com_watermark.png"></figure>
 <p>在支持64位的寻址的计算机中，每一个1字节的存储单元都有一个8个字节长度的物理地址，一般用16进制来表示。大学计算机组成原理中的“3-8译码器”就是一个最最基础的可以寻址取值的内存模型，通过3个电线的高低电平组合，来生成2的三次方个不同地址。而指针就是<strong>把某个内存单元的地址作为数据，存储到另外一个内存单元。</strong></p>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-5b5960fe104ab1a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针3_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="2"><img src="https://upload-images.jianshu.io/upload_images/743228-5b5960fe104ab1a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针3_gaitubao_com_watermark.png"></figure>
 <p>上图就是把 0x001122AAEE3377FD 的内存地址放到了 0x001122AAEE3377F1 ~ 0x001122AAEE3377F8 连续8个内存单元中，那么把这8个内存单元看做整体就可以表示为 0x001122AAEE3377FD 的指针变量。</p>
 <h2 id="指针的使用">指针的使用</h2>
 <p>指针，不仅把硬件层面上计算机特性体现在抽象的软件编码上，而且由于指针的引入还大大提高了编程人员的编码灵活性。在C语言中，指针被称为“C语言的精华”。</p>
@@ -174,7 +174,7 @@ short e = *(short *)c;
 NSLog(@&quot;%d&quot;,d);
 NSLog(@&quot;%d&quot;,e);
 </code></pre>
-<p><img src="https://upload-images.jianshu.io/upload_images/743228-1207ff7e9c8c22bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="指针4_gaitubao_com_watermark.png"></p>
+<figure data-type="image" tabindex="3"><img src="https://upload-images.jianshu.io/upload_images/743228-1207ff7e9c8c22bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="指针4_gaitubao_com_watermark.png"></figure>
 <p>看上边的代码和打印，我们可以清楚的看到为什么e的值为-1，这就是通过指针的运算，强制用short类型的2字节数据结构去截取<code>*c</code>变量。因为在计算机内，基本数据结构的存储是<strong>小端字节序</strong>，所以通过指针截取到的是前两个字节，即 ff ff ，按short读取就是十进制的-1。</p>
 <p><strong>（字符指针，未完待续）</strong></p>
 

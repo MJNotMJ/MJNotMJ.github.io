@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
-<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1573562729000">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1573632054859">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
 <link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
 
@@ -30,7 +30,7 @@
   <div class="top-container" data-aos="fade-right">
     <div class="top-header-container">
       <a class="site-title-container" href="https://MJNotMJ.github.io">
-        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1573562729000" class="site-logo">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1573632054859" class="site-logo">
         <h1 class="site-title">MJNotMJ</h1>
       </a>
       <div class="menu-btn" @click="menuVisible = !menuVisible">
@@ -117,7 +117,7 @@
 <p>反向代理（ Reverse Proxy ）[rɪ'vɝs]</p>
 <p>那举一反三，既然有反向代理，那肯定也有正向代理，两个概念对比着来看。</p>
 <p>正向代理，其实就是我们平常所说的“ 代理服务器 ”，应用最多的场景就是突破 GFW 的封锁，去访问 Google 的互联网服务。先简单介绍一下 GFW 的封锁原理。首先在国内所有互联网服务提供商都被几家国有的大型企业所垄断，也就是说在国内所有的能上网的 IP 都是由这些寡头所分配，人家肯定知道你的 IP 是多少，于是当你的 IP 去访问 Google 的 IP 时，这些互联网的运营商就会对你的请求数据包进行拦截，这就是所谓的 GFW 的最基本的拦截原理。</p>
-<p>GFW 知道 Google 的 IP 很正常，但是全球这么多 IP 地址它不可能都去封锁。所以，可以在国外架设一个代理服务器去替国内的客户端访问 Google 的服务，然后再由这个代理服务器把返回的结果告诉国内的客户端。在 GFW 看来，国内的 IP 只是访问了一个国外 IP 而已，它不知道国外这个普通的IP到底是干什么的，而且也不可能知道。所以，通过这种方式就把 GFW 能监管的那部分移到了国外进行，从而实现了“ 翻墙 ”。
+<p>GFW 知道 Google 的 IP 很正常，但是全球这么多 IP 地址它不可能都去封锁。所以，可以在国外架设一个代理服务器去替国内的客户端访问 Google 的服务，然后再由这个代理服务器把返回的结果告诉国内的客户端。在 GFW 看来，国内的 IP 只是访问了一个国外 IP 而已，它不知道国外这个普通的IP到底是干什么的，而且也不可能知道。所以，通过这种方式就把 GFW 能监管的那部分移到了国外进行，从而实现了“ 翻墙 ”。<br>
 以上就是<strong>正向代理</strong>的例子，这个代理服务器隐匿了客户端的请求信息，整合了这些客户端的请求信息后，统一面向服务端。即把多个客户端的请求整合映射到同一个服务器上。具体对于 Google 的服务器来说，它直接面对的是这个搜集所有客户端请求的代理服务器，而不是散落在全球各地的客户端。</p>
 <p>（ 假装有图片 ）</p>
 <p>反向代理，则正好相反。即把单一客户端的请求去映射到不同的服务器上。</p>
