@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://MJNotMJ.github.io</id>
     <title>MJNotMJ</title>
-    <updated>2019-11-13T08:01:30.635Z</updated>
+    <updated>2019-11-13T09:19:01.922Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://MJNotMJ.github.io"/>
     <link rel="self" href="https://MJNotMJ.github.io/atom.xml"/>
@@ -10,6 +10,63 @@
     <logo>https://MJNotMJ.github.io/images/avatar.png</logo>
     <icon>https://MJNotMJ.github.io/favicon.ico</icon>
     <rights>All rights reserved 2019, MJNotMJ</rights>
+    <entry>
+        <title type="html"><![CDATA[iOS 事件传递 && 响应者链条]]></title>
+        <id>https://MJNotMJ.github.io/post/ios-shi-jian-chuan-di-and-xiang-ying-zhe-lian-tiao</id>
+        <link href="https://MJNotMJ.github.io/post/ios-shi-jian-chuan-di-and-xiang-ying-zhe-lian-tiao">
+        </link>
+        <updated>2019-11-13T09:18:22.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="ios-事件传递-响应者链条">iOS 事件传递 &amp;&amp; 响应者链条</h3>
+<figure data-type="image" tabindex="1"><img src="https://tva2.sinaimg.cn/large/e48133b2ly1g8winnwhv6j20or0w2h4g.jpg" alt="UIResponder"></figure>
+<p>UIResponder 处理三种事件</p>
+<pre><code>// 触摸事件
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event;
+
+// 加速计事件
+- (void)motionBegan:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+- (void)motionEnded:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+- (void)motionCancelled:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+
+// 远程控制事件
+- (void)remoteControlReceivedWithEvent:(UIEvent *)event;
+
+</code></pre>
+<h3 id="uitouch">UITouch</h3>
+<p>UITouch的作用就是它会保存着这个手指相关的一些信息，触摸时间，位置，阶段等之类的信息。<br>
+当手指移动时，系统会更新同一个UITouch对象，使之能够一直保存该手指在的触摸位置<br>
+当手指头离开屏幕的时候，那么与之对应的UITouch对象就会销毁了。</p>
+<h3 id="事件的传递">事件的传递</h3>
+<p>当用户的手指触摸屏幕的某一个view的时候，此时就发生了触摸事件，系统会把该事件加入UIApplication管理的事件队列中去。通常，先发送事件给应用程序的主窗口（keyWindow），主窗口会在视图层次结构上面找到一个<strong>最合适</strong>的视图来处理触摸事件</p>
+<p>触摸事件的传递是由父控件传递到子控件的</p>
+<p>如果父控件不能接受触摸事件，那么子控件就不可能接受触摸事件</p>
+<ul>
+<li>不允许与用户交互userInteractionEnabled = NO</li>
+<li>这个控件隐藏了hidden = YES</li>
+<li>透明度太小了alpha = 0.0 ~ 0.01</li>
+</ul>
+<ol>
+<li>首先它会判断它自己是否能接受触摸事件，如果它不能接收触摸事件，那么它肯定不是最合适的，</li>
+<li>然后再判断用户手指的触摸点是否在它自己的身上，如果不在，那么他就不是最合适的</li>
+<li>执行完上面两个操作，然后从后往前遍历子控件（意思是先遍历后加入的子控件），然后重复上面的两个步骤</li>
+<li>如果没有找到复合条件的子控件，那么它自己就是最适合处理事件的控件</li>
+</ol>
+<pre><code>- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event // 来查找最合适处理事件的方法
+
+- (BOOL)pointInside:(CGPoint)point withEvent:(nullable UIEvent *)event // 来判断触摸点是否在其身上
+
+
+</code></pre>
+<h3 id="响应者链条事件的处理">响应者链条（事件的处理）</h3>
+<p>当用户点击屏幕后产生一个触摸事件，经过经过一系列的传递过程后，会找到最合适的视图控件来处理这个事件，找到最合适的视图之后，就会调用空间的touches那三个方法，这些方法的默认做法是把事件顺着响应者链条向上传递，将事件传递给上一个响应者进行处理</p>
+<figure data-type="image" tabindex="2"><img src="https://tvax1.sinaimg.cn/large/e48133b2ly1g8wj675izxj20xc0j7q7w.jpg" alt="响应者链条"></figure>
+<p>首先initial view会把事件传递给橘黄色的view，橘黄色view又把事件给时间传递给了蓝绿色view，蓝绿色view把时间传递给了控制器view，控制器view把事件传递给了窗口，窗口把事件传递给了Application对象。</p>
+<h4 id="事件传递的完整过程">事件传递的完整过程</h4>
+<p>先将事件对象由上往下传递(由父控件传递给子控件)，找到最合适的控件来处理这个事件，调用最合适控件的touches….方法，如果调用了[super touches….]那么就会将事件顺着响应者链条往上传递，传递给上一个响应者，接着就会调用上一个响应者的touches….方法</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[UIWindow]]></title>
         <id>https://MJNotMJ.github.io/post/uiwindow</id>
@@ -222,7 +279,7 @@ __NSCFConstantString -&gt; __NSCFString -&gt; NSMutableString -&gt; NSString -&g
 
 </code></pre>
 <ul class="contains-task-list">
-<li class="task-list-item"><input class="task-list-item-checkbox" checked="" disabled="" type="checkbox" id="task-item-5808377"><label class="task-list-item-label" for="task-item-5808377"> 学会用 MarkDown 语法画思维导图</label></li>
+<li class="task-list-item"><input class="task-list-item-checkbox" checked="" disabled="" type="checkbox" id="task-item-8306345"><label class="task-list-item-label" for="task-item-8306345"> 学会用 MarkDown 语法画思维导图</label></li>
 </ul>
 <pre><code>graph TD
 A0[MJRefreshNormalHeader]
@@ -820,94 +877,6 @@ Person类的实例 &lt;Person: 0x600000011830&gt; 释放了
 <h2 id="一个大胆的猜想">一个大胆的猜想</h2>
 <p>上边两个场景让我们在 ARC 的机制下“很皮”地玩了一下内存，那么问题来了。现在我们可以记录了实例的内存地址，但是还原这个实例的时候我们还是得引入这个类的头文件来创建数据结构接这个地址。我们能不能在类的 load 装载方法里，把这个类的对象地址也记录下来呢？到时候一个实例对象的地址，一个类地址，我们就可以在任意位置没有耦合地随意访问了，当然前提是内存中已经创建了对应类的实例对象了。</p>
 <p>话又说回来，这样的安全性就没办法保证了，所以留待以后探究啦！</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[从硬件层面理解指针]]></title>
-        <id>https://MJNotMJ.github.io/post/cong-ying-jian-ceng-mian-li-jie-zhi-zhen</id>
-        <link href="https://MJNotMJ.github.io/post/cong-ying-jian-ceng-mian-li-jie-zhi-zhen">
-        </link>
-        <updated>2019-05-26T07:31:22.000Z</updated>
-        <summary type="html"><![CDATA[<p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。</p>
-<!-- more -->
-<h1 id="从硬件层面理解指针一">从硬件层面理解指针（一）</h1>
-<h2 id="指针的硬件基础">指针的硬件基础</h2>
-<p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。要完成上述三种操作，会有一系列的计算机硬件结构为CPU提供支持：CPU内的寄存器为数据提供操作空间；一二级缓存为CPU高速运算提供支持；数据总线、地址总线为CPU提供数据通道；ROM、RAM为CPU提供数据资料……</p>
-<p>其中<code>寻址</code>作为一个动作几乎贯彻始终：寄存器有通用寄存器、程序计数器等等，CPU里的控制器需要知道它们的地址以便取值运算；缓存需要命中当前CPU急需的数据资源，当然也必须知道数据地址来进行数据页的置换；总线的宽度决定了能访问到的地址长度，总线的大小决定着计算机的寻址能力的大小；ROM、RAM作为数据的存储单元，唯一数据对应唯一地址，更是在硬件层面保证寻址正确的基础。</p>
-<figure data-type="image" tabindex="1"><img src="https://upload-images.jianshu.io/upload_images/743228-91ccc3abf7ee6486.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针2_gaitubao_com_watermark.png"></figure>
-<p>在支持64位的寻址的计算机中，每一个1字节的存储单元都有一个8个字节长度的物理地址，一般用16进制来表示。大学计算机组成原理中的“3-8译码器”就是一个最最基础的可以寻址取值的内存模型，通过3个电线的高低电平组合，来生成2的三次方个不同地址。而指针就是<strong>把某个内存单元的地址作为数据，存储到另外一个内存单元。</strong></p>
-<figure data-type="image" tabindex="2"><img src="https://upload-images.jianshu.io/upload_images/743228-5b5960fe104ab1a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针3_gaitubao_com_watermark.png"></figure>
-<p>上图就是把 0x001122AAEE3377FD 的内存地址放到了 0x001122AAEE3377F1 ~ 0x001122AAEE3377F8 连续8个内存单元中，那么把这8个内存单元看做整体就可以表示为 0x001122AAEE3377FD 的指针变量。</p>
-<h2 id="指针的使用">指针的使用</h2>
-<p>指针，不仅把硬件层面上计算机特性体现在抽象的软件编码上，而且由于指针的引入还大大提高了编程人员的编码灵活性。在C语言中，指针被称为“C语言的精华”。</p>
-<pre><code class="language--">int *a;
-int m = 300;
-a = &amp;m;
-    
-NSLog(@&quot;%d&quot;,*a);
-NSLog(@&quot;%p&quot;,a);
-NSLog(@&quot;%p&quot;,&amp;a);
-NSLog(@&quot;%p&quot;,&amp;(*a));
-    
-    
-NSLog(@&quot;%lu&quot;,sizeof(*a));
-NSLog(@&quot;%lu&quot;,sizeof(a));
-NSLog(@&quot;%lu&quot;,sizeof(&amp;a));
-NSLog(@&quot;%lu&quot;,sizeof(&amp;(*a)));
-    
-NSLog(@&quot;%lu&quot;,sizeof(m));
-</code></pre>
-<p>打印结果</p>
-<pre><code class="language--">300             // int型的指针变量实际指向的int值
-0x7ffeefbfeba4  // 指针变量存储的数值，即实际int值的首地址
-0x7ffeefbfeba8  // 指针变量的地址
-0x7ffeefbfeba4  // 实际指向的int值的地址，即指针变量存贮的数值（同第二个，只不过反过来描述）
-4               // 实际指向的int值的长度，即64位系统下int型长度
-8               // 存储指针变量长度，用了8个字节的存储单元
-8               // 指针变量的地址长度，64位系统下都是8个字节
-8               // 存储指针变量长度
-4               // m的长度，即整型的长度
-</code></pre>
-<pre><code class="language--">int *c;
-int n;
-c = &amp;n;
-*c = 100;
-NSLog(@&quot;%d&quot;,*c);
-    
-int *b;
-*b = 100;       // 会崩溃
-NSLog(@&quot;%d&quot;,*b);
-</code></pre>
-<p>看上边的两段代码，第一段是创建一个指针变量和一个数值变量，并把这个数值变量的地址赋给指针变量；第二段代码只有一个指针变量，然后直接拿着这个指针变量的地址去赋数值，在编译的时候会有一个警告：未初始化的指针变量，运行的时候直接 BAD_ACCESS 崩溃了；由此可见，指针的赋值，必须有一个已经确切知道内存地址的变量来赋，不能想当然的意味定义好了一个指针拿来随便指向。</p>
-<pre><code class="language--">int *d = (int *)600;
-NSLog(@&quot;%p&quot;,d);
-NSLog(@&quot;%p&quot;,&amp;d);
-NSLog(@&quot;%d&quot;,*d);   // 会崩溃
-    
-int *e;
-e = (int *)600;
-NSLog(@&quot;%p&quot;,e);
-NSLog(@&quot;%p&quot;,&amp;e);
-NSLog(@&quot;%d&quot;,*e);   // 会崩溃
-</code></pre>
-<p>看上边的两段代码，在验证 int *d = (int *)600 的赋值语句其实是对声明的指针变量进行强制赋值，赋上某个指向整型变量空间的地址。当我们通过<code>*d</code>去访问这个地址空间真实的int数值时，崩溃。为什么？？？猜测大概是因为我们强行赋值的600已经超过操作系统指定的用户空间了。</p>
-<pre><code class="language--">int *c;
-int n;
-c = &amp;n;
-*c = 2147483647;  // 2147483647为int最大值 原码为0111 1111 1111 1111 1111 1111 1111 1111
-NSLog(@&quot;%d&quot;,*c);
-      
-int d = *(int *)c;
-short e = *(short *)c;
-
-NSLog(@&quot;%d&quot;,d);
-NSLog(@&quot;%d&quot;,e);
-</code></pre>
-<figure data-type="image" tabindex="3"><img src="https://upload-images.jianshu.io/upload_images/743228-1207ff7e9c8c22bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="指针4_gaitubao_com_watermark.png"></figure>
-<p>看上边的代码和打印，我们可以清楚的看到为什么e的值为-1，这就是通过指针的运算，强制用short类型的2字节数据结构去截取<code>*c</code>变量。因为在计算机内，基本数据结构的存储是<strong>小端字节序</strong>，所以通过指针截取到的是前两个字节，即 ff ff ，按short读取就是十进制的-1。</p>
-<p><strong>（字符指针，未完待续）</strong></p>
 ]]></content>
     </entry>
 </feed>
