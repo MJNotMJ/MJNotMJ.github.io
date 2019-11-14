@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" >
 
-<title>标签列表 | MJNotMJ</title>
+<title>数字签名 &amp;&amp; 认证  | MJNotMJ</title>
 <meta name="description" content="念念不忘  必有回响">
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -91,12 +91,39 @@
 
       <div class="main-container">
         <div class="content-container" data-aos="fade-up">
-          <h2 class="tag-list-title">标签列表</h2>
-          <div class="tags-container">
+          <div class="post-detail">
+            <h2 class="post-title">数字签名 &amp;&amp; 认证 </h2>
+            <div class="post-date">2019-11-14</div>
             
-              <a class="tag" href="https://MJNotMJ.github.io/tag/t6sfGhhUR">iOS</a>
+            <div class="post-content">
+              <h4 id="消息认证码">消息认证码</h4>
+<p>利用对称加密，对消息的完整性进行保护和身份认证。</p>
+<figure data-type="image" tabindex="1"><img src="https://tva3.sinaimg.cn/large/e48133b2ly1g8xerjd9mfj21ac0wajvk.jpg" alt="消息验证码"></figure>
+<p>消息认证码可以实现简单的身份认证，其安全问题主要在于需要事先共享秘钥（可能发生秘钥泄露），并且当多方共享秘钥时，无法追踪消息的真实来源。</p>
+<h4 id="数字签名">数字签名</h4>
+<p>数字签名使用<strong>非对称加密</strong>，保护数据的完整性和追踪消息的来源。</p>
+<figure data-type="image" tabindex="2"><img src="https://tva1.sinaimg.cn/large/e48133b2ly1g8xf5pcexrj21gu0xu78q.jpg" alt="数字签名"></figure>
+<h5 id="认证ca">认证（CA）</h5>
+<p>当接收方的本地的发送方的公钥被调换时，接收方就不能收到真正发送方的消息，它一直能校验确认的却是“攻击方”的消息。所以，需要一个权威性的公钥分发平台（certificate authority 简称 <strong>CA</strong>），来保证获取的公钥就是发送方的公钥。</p>
+<figure data-type="image" tabindex="3"><img src="https://tvax4.sinaimg.cn/large/e48133b2ly1g8xfjnvuiuj21s80w244a.jpg" alt="CA认证机构"></figure>
+
+            </div>
             
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/ios-shi-jian-chuan-di-and-xiang-ying-zhe-lian-tiao">
+                  <h3 class="post-title">
+                    iOS 事件传递 &amp;&amp; 响应者链条
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
           </div>
+
         </div>
       </div>
     </div>
