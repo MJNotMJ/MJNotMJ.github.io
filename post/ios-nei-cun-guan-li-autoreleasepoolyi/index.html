@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>iOS内存管理：autoreleasepool（一） | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">iOS内存管理：autoreleasepool（一）</h2>
+            <div class="post-date">2019-05-26</div>
+            
+              <div class="feature-container" style="background-image: url('https://upload-images.jianshu.io/upload_images/743228-765231de50860e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240')">
+              </div>
+            
+            <div class="post-content">
+              <p>在 iOS 的内存管理机制中，ARC 可以帮助开发人员很方便的进行编码，只要遵循 ARC 的规则就无需为内存纠结过多。但是，只有从 MRC 走过的程序员对内存管理才有更深的理解，“谁创建谁释放”的原则一直是那个时代的开发人员所奉行的<strong>黄金准则</strong>。</p>
+<!-- more -->
+<h1 id="ios内存管理autoreleasepool一">iOS内存管理：autoreleasepool（一）</h1>
+<p>大多数开发人员，对于 autoreleasepool 的理解还仅仅停留在知道的层面上，稍微有些研究的可能知道 autoreleasepool 的数据结构以及 push 和 pop 函数的运行原理。接下来我们不会从代码实现上审视它，而是从内存的角度去理解它。如果想在代码实现的角度去研究 autoreleasepool 那么请移步这两篇文章：<a href="https://github.com/Draveness/analyze/blob/master/contents/objc/%E8%87%AA%E5%8A%A8%E9%87%8A%E6%94%BE%E6%B1%A0%E7%9A%84%E5%89%8D%E4%B8%96%E4%BB%8A%E7%94%9F.md">自动释放池的前世今生</a>、<a href="http://blog.sunnyxx.com/2014/10/15/behind-autorelease/">黑幕背后的Autorelease</a></p>
+<h2 id="ios内存管理">iOS内存管理</h2>
+<p>在 iOS 的内存管理机制中，ARC 可以帮助开发人员很方便的进行编码，只要遵循 ARC 的规则就无需为内存纠结过多。但是，只有从 MRC 走过的程序员对内存管理才有更深的理解，“谁创建谁释放”的原则一直是那个时代的开发人员所奉行的<strong>黄金准则</strong>。</p>
+<pre><code class="language--">// ARC 帮助我们为强引用的对象增加引用计数
+self.person = [[[Person alloc] init] retain];
+// ARC 帮助我们在指针丢失之前增加减少引用计数的release
+[self.person release]
+self.person = nil;
+</code></pre>
+<p>这些都是 iOS 的内存管理机制作用的结果，帮助我们管理对象持有关系。但是对于局部变量里的创建的引用以及引用指向的堆内存空间，没有所谓的持有者，那么它的内存归谁去管理呢？答案就是自动释放池来管理了。</p>
+<pre><code class="language--">Person *p = [[[Person alloc] init] autorelease];
+</code></pre>
+<h2 id="线程栈">线程栈</h2>
+<p>局部变量会在当前线程中的线程栈创建，然后线程栈上的指针会指向堆中开辟的对象空间。那么当函数作用域完毕，需要进行栈平衡时，栈收缩的空间就是栈中指针的空间，而真正的实例对象还在堆上，所以 autoreleasepool 就是来管理和释放这些内存的。iOS 的主线程栈 1M 内存，子线程栈 512KB。</p>
+<figure data-type="image" tabindex="1"><img src="https://upload-images.jianshu.io/upload_images/743228-765231de50860e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="auto1_gaitubao_com_watermark.png" loading="lazy"></figure>
+<h2 id="autoreleasepoolpage">AutoreleasePoolPage</h2>
+<p>AutoreleasePoolPage 是一个 C++ 的类，它负责管理和容纳需要自动释放的对象指针，每个页有4096字节内存，以<strong>双头链表</strong>的形式作为整个释放池的数据结构。之所以用<strong>双头链表</strong>就是方便池子占满后快速的创建新池，还能在收到释放消息后能反向查找<strong>哨兵对象</strong>快速的释放池子。</p>
+<figure data-type="image" tabindex="2"><img src="https://upload-images.jianshu.io/upload_images/743228-dc1e65c8d541bec5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="ayto2_gaitubao_com_watermark.png" loading="lazy"></figure>
+<p>当 Runloop 结束时会向前一直回溯寻找哨兵对象进行释放，有时甚至跨越好几个 Page 进行。下一篇会结合 Runloop 来详细解释 AutoreleasePool 的释放时机。</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/lao-sheng-chang-tan-de-copy/">
+                  <h3 class="post-title">
+                    老生常谈的Copy
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

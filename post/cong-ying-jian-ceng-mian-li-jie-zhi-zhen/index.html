@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>从硬件层面理解指针 | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">从硬件层面理解指针</h2>
+            <div class="post-date">2019-05-26</div>
+            
+              <div class="feature-container" style="background-image: url('https://upload-images.jianshu.io/upload_images/743228-91ccc3abf7ee6486.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240')">
+              </div>
+            
+            <div class="post-content">
+              <p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。</p>
+<!-- more -->
+<h1 id="从硬件层面理解指针一">从硬件层面理解指针（一）</h1>
+<h2 id="指针的硬件基础">指针的硬件基础</h2>
+<p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。要完成上述三种操作，会有一系列的计算机硬件结构为CPU提供支持：CPU内的寄存器为数据提供操作空间；一二级缓存为CPU高速运算提供支持；数据总线、地址总线为CPU提供数据通道；ROM、RAM为CPU提供数据资料……</p>
+<p>其中<code>寻址</code>作为一个动作几乎贯彻始终：寄存器有通用寄存器、程序计数器等等，CPU里的控制器需要知道它们的地址以便取值运算；缓存需要命中当前CPU急需的数据资源，当然也必须知道数据地址来进行数据页的置换；总线的宽度决定了能访问到的地址长度，总线的大小决定着计算机的寻址能力的大小；ROM、RAM作为数据的存储单元，唯一数据对应唯一地址，更是在硬件层面保证寻址正确的基础。</p>
+<figure data-type="image" tabindex="1"><img src="https://upload-images.jianshu.io/upload_images/743228-91ccc3abf7ee6486.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针2_gaitubao_com_watermark.png" loading="lazy"></figure>
+<p>在支持64位的寻址的计算机中，每一个1字节的存储单元都有一个8个字节长度的物理地址，一般用16进制来表示。大学计算机组成原理中的“3-8译码器”就是一个最最基础的可以寻址取值的内存模型，通过3个电线的高低电平组合，来生成2的三次方个不同地址。而指针就是<strong>把某个内存单元的地址作为数据，存储到另外一个内存单元。</strong></p>
+<figure data-type="image" tabindex="2"><img src="https://upload-images.jianshu.io/upload_images/743228-5b5960fe104ab1a5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="再识指针3_gaitubao_com_watermark.png" loading="lazy"></figure>
+<p>上图就是把 0x001122AAEE3377FD 的内存地址放到了 0x001122AAEE3377F1 ~ 0x001122AAEE3377F8 连续8个内存单元中，那么把这8个内存单元看做整体就可以表示为 0x001122AAEE3377FD 的指针变量。</p>
+<h2 id="指针的使用">指针的使用</h2>
+<p>指针，不仅把硬件层面上计算机特性体现在抽象的软件编码上，而且由于指针的引入还大大提高了编程人员的编码灵活性。在C语言中，指针被称为“C语言的精华”。</p>
+<pre><code class="language--">int *a;
+int m = 300;
+a = &amp;m;
+    
+NSLog(@&quot;%d&quot;,*a);
+NSLog(@&quot;%p&quot;,a);
+NSLog(@&quot;%p&quot;,&amp;a);
+NSLog(@&quot;%p&quot;,&amp;(*a));
+    
+    
+NSLog(@&quot;%lu&quot;,sizeof(*a));
+NSLog(@&quot;%lu&quot;,sizeof(a));
+NSLog(@&quot;%lu&quot;,sizeof(&amp;a));
+NSLog(@&quot;%lu&quot;,sizeof(&amp;(*a)));
+    
+NSLog(@&quot;%lu&quot;,sizeof(m));
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">300             // int型的指针变量实际指向的int值
+0x7ffeefbfeba4  // 指针变量存储的数值，即实际int值的首地址
+0x7ffeefbfeba8  // 指针变量的地址
+0x7ffeefbfeba4  // 实际指向的int值的地址，即指针变量存贮的数值（同第二个，只不过反过来描述）
+4               // 实际指向的int值的长度，即64位系统下int型长度
+8               // 存储指针变量长度，用了8个字节的存储单元
+8               // 指针变量的地址长度，64位系统下都是8个字节
+8               // 存储指针变量长度
+4               // m的长度，即整型的长度
+</code></pre>
+<pre><code class="language--">int *c;
+int n;
+c = &amp;n;
+*c = 100;
+NSLog(@&quot;%d&quot;,*c);
+    
+int *b;
+*b = 100;       // 会崩溃
+NSLog(@&quot;%d&quot;,*b);
+</code></pre>
+<p>看上边的两段代码，第一段是创建一个指针变量和一个数值变量，并把这个数值变量的地址赋给指针变量；第二段代码只有一个指针变量，然后直接拿着这个指针变量的地址去赋数值，在编译的时候会有一个警告：未初始化的指针变量，运行的时候直接 BAD_ACCESS 崩溃了；由此可见，指针的赋值，必须有一个已经确切知道内存地址的变量来赋，不能想当然的意味定义好了一个指针拿来随便指向。</p>
+<pre><code class="language--">int *d = (int *)600;
+NSLog(@&quot;%p&quot;,d);
+NSLog(@&quot;%p&quot;,&amp;d);
+NSLog(@&quot;%d&quot;,*d);   // 会崩溃
+    
+int *e;
+e = (int *)600;
+NSLog(@&quot;%p&quot;,e);
+NSLog(@&quot;%p&quot;,&amp;e);
+NSLog(@&quot;%d&quot;,*e);   // 会崩溃
+</code></pre>
+<p>看上边的两段代码，在验证 int *d = (int *)600 的赋值语句其实是对声明的指针变量进行强制赋值，赋上某个指向整型变量空间的地址。当我们通过<code>*d</code>去访问这个地址空间真实的int数值时，崩溃。为什么？？？猜测大概是因为我们强行赋值的600已经超过操作系统指定的用户空间了。</p>
+<pre><code class="language--">int *c;
+int n;
+c = &amp;n;
+*c = 2147483647;  // 2147483647为int最大值 原码为0111 1111 1111 1111 1111 1111 1111 1111
+NSLog(@&quot;%d&quot;,*c);
+      
+int d = *(int *)c;
+short e = *(short *)c;
+
+NSLog(@&quot;%d&quot;,d);
+NSLog(@&quot;%d&quot;,e);
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://upload-images.jianshu.io/upload_images/743228-1207ff7e9c8c22bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="指针4_gaitubao_com_watermark.png" loading="lazy"></figure>
+<p>看上边的代码和打印，我们可以清楚的看到为什么e的值为-1，这就是通过指针的运算，强制用short类型的2字节数据结构去截取<code>*c</code>变量。因为在计算机内，基本数据结构的存储是<strong>小端字节序</strong>，所以通过指针截取到的是前两个字节，即 ff ff ，按short读取就是十进制的-1。</p>
+<p><strong>（字符指针，未完待续）</strong></p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/cong-bian-yi-jiao-du-li-jie-bian-liang/">
+                  <h3 class="post-title">
+                    从编译角度理解变量
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

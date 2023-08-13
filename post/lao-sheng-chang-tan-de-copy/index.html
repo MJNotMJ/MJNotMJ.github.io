@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>老生常谈的Copy | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">老生常谈的Copy</h2>
+            <div class="post-date">2019-05-26</div>
+            
+              <div class="feature-container" style="background-image: url('https://upload-images.jianshu.io/upload_images/743228-9e68dac435001fbf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240')">
+              </div>
+            
+            <div class="post-content">
+              <p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运<br>
+“的意味。下面我就通过图表、代码实践一把。</p>
+<!-- more -->
+<h1 id="老生常谈的copy">老生常谈的Copy</h1>
+<p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运<br>
+“的意味。下面我就通过图表、代码实践一把。</p>
+<h2 id="非集合类的copy">非集合类的Copy</h2>
+<h3 id="nsstring-的-copy-和-mutablecopy">NSString 的 Copy 和 mutableCopy</h3>
+<pre><code class="language--">NSString *string = @&quot;abc&quot;;
+NSString *stringCopy = [string copy];
+NSMutableString *stringMCopy = [string mutableCopy];
+NSLog(@&quot;string: %p, %p&quot;, string, &amp;string);
+NSLog(@&quot;stringCopy: %p, %p&quot;, stringCopy, &amp;stringCopy);
+NSLog(@&quot;stringMCopy: %p, %p&quot;, stringMCopy, &amp;stringMCopy);
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">string: 0x1022fe078, 0x7fff5d901a48
+stringCopy: 0x1022fe078, 0x7fff5d901a40
+stringMCopy: 0x608000260240, 0x7fff5d901a38
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://upload-images.jianshu.io/upload_images/743228-02c047f8ead1b3bc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy1_gaitubao_com_watermark.png" loading="lazy"></figure>
+<h3 id="nsmutablestring-的-copy-和-mutablecopy">NSMutableString 的 Copy 和 mutableCopy</h3>
+<pre><code class="language--">NSMutableString *string = [NSMutableString stringWithFormat:@&quot;abc&quot;];
+NSString *stringCopy = [string copy];
+NSMutableString *stringMCopy = [string mutableCopy];
+ 
+NSLog(@&quot;string: %p, %p&quot;, string, &amp;string);
+NSLog(@&quot;stringCopy: %p, %p&quot;, stringCopy, &amp;stringCopy);
+NSLog(@&quot;stringMCopy: %p, %p&quot;, stringMCopy, &amp;stringMCopy);
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">string: 0x608000264680, 0x7fff5526aa48
+stringCopy: 0xa000000006362613, 0x7fff5526aa40
+stringMCopy: 0x608000264940, 0x7fff5526aa38
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://upload-images.jianshu.io/upload_images/743228-9e68dac435001fbf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy2_gaitubao_com_watermark.png" loading="lazy"></figure>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">copy</th>
+<th style="text-align:center">mutableCopy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">NSString</td>
+<td style="text-align:center">浅</td>
+<td style="text-align:center">深</td>
+</tr>
+<tr>
+<td style="text-align:center">NSMutableString</td>
+<td style="text-align:center">深</td>
+<td style="text-align:center">深</td>
+</tr>
+</tbody>
+</table>
+<h2 id="集合类的copy">集合类的Copy</h2>
+<h3 id="nsarray-的-copy-和-mutablecopy">NSArray 的 Copy 和 mutableCopy</h3>
+<pre><code class="language--">NSString *element_01 = @&quot;abc&quot;;
+NSString *element_02 = @&quot;def&quot;;
+NSString *element_03 = @&quot;ghi&quot;;
+NSArray *array = @[element_01, element_02, element_03];
+NSArray *arrayCopy = [array copy];
+NSMutableArray *arrayMCopy = [array mutableCopy];
+
+NSLog(@&quot;array: %p, %p; array.firstObject: %p&quot;, array, &amp;array, array.firstObject);
+NSLog(@&quot;arrayCopy: %p, %p; arrayCopy.firstObject: %p&quot;, arrayCopy, &amp;arrayCopy, arrayCopy.firstObject);
+NSLog(@&quot;arrayMCopy: %p, %p; arrayMCopy.firstObject: %p&quot;, arrayMCopy, &amp;arrayMCopy, arrayMCopy.firstObject);
+</code></pre>
+<p>打印结果</p>
+<pre><code>array: 0x600000245910, 0x7fff51367a10; array.firstObject: 0x10e898088
+arrayCopy: 0x600000245910, 0x7fff51367a08; arrayCopy.firstObject: 0x10e898088
+arrayMCopy: 0x600000245670, 0x7fff51367a00; arrayMCopy.firstObject: 0x10e898088
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://upload-images.jianshu.io/upload_images/743228-dbdb81f8fc03a71b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy3_gaitubao_com_watermark.png" loading="lazy"></figure>
+<figure data-type="image" tabindex="4"><img src="https://upload-images.jianshu.io/upload_images/743228-e51bf42c33d4a68d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy4_gaitubao_com_watermark.png" loading="lazy"></figure>
+<h3 id="nsmutablearray-的-copy-和-mutablecopy">NSMutableArray 的 Copy 和 mutableCopy</h3>
+<pre><code class="language--">NSString *element_01 = @&quot;abc&quot;;
+NSString *element_02 = @&quot;def&quot;;
+NSString *element_03 = @&quot;ghi&quot;;
+NSMutableArray *array = [NSMutableArray arrayWithArray:@[element_01, element_02, element_03]];
+ 
+NSArray *arrayCopy = [array copy];
+NSMutableArray *arrayMCopy = [array mutableCopy];
+ 
+NSLog(@&quot;array: %p, %p; array.firstObject: %p&quot;, array, &amp;array, array.firstObject);
+NSLog(@&quot;arrayCopy: %p, %p; arrayCopy.firstObject: %p&quot;, arrayCopy, &amp;arrayCopy, arrayCopy.firstObject);
+NSLog(@&quot;arrayMCopy: %p, %p; arrayMCopy.firstObject: %p&quot;, arrayMCopy, &amp;arrayMCopy, arrayMCopy.firstObject);
+</code></pre>
+<p>打印结果</p>
+<pre><code>array: 0x6000000460c0, 0x7fff516d3a10; array.firstObject: 0x10e52c088
+arrayCopy: 0x600000046420, 0x7fff516d3a08; arrayCopy.firstObject: 0x10e52c088
+arrayMCopy: 0x600000046000, 0x7fff516d3a00; arrayMCopy.firstObject: 0x10e52c088
+</code></pre>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">copy</th>
+<th style="text-align:center">mutableCopy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">NSArray</td>
+<td style="text-align:center">浅</td>
+<td style="text-align:center">深（不完全）</td>
+</tr>
+<tr>
+<td style="text-align:center">NSMutableArray</td>
+<td style="text-align:center">深（不完全）</td>
+<td style="text-align:center">深（不完全）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="对集合类进行完全深复制">对集合类进行完全深复制</h2>
+<p>首先，容器内的元素要遵循 NSCopying 协议，并实现 copyWithZone 方法</p>
+<pre><code>- (instancetype)copyWithZone:(NSZone *)zone {
+    CopyModel *copyModel = [[CopyModel allocWithZone:zone] init];
+    copyModel.title = self.title;
+    copyModel.name = self.name;
+    return copyModel;
+}
+</code></pre>
+<p>在 copy 的时候实现 copyItem 方法</p>
+<pre><code class="language--">NSArray *mAry = [[NSMutableArray alloc] initWithArray:ary copyItems:YES];
+</code></pre>
+<figure data-type="image" tabindex="5"><img src="https://upload-images.jianshu.io/upload_images/743228-03243e91f31fc39e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="copy5_gaitubao_com_watermark.png" loading="lazy"></figure>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/kui-tan-yi-xia-arc-ji-zhi/">
+                  <h3 class="post-title">
+                    窥探一下ARC机制
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

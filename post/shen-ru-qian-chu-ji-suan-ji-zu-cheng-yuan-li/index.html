@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>深入浅出计算机组成原理 | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">深入浅出计算机组成原理</h2>
+            <div class="post-date">2020-05-08</div>
+            
+            <div class="post-content">
+              <h2 id="开篇">开篇</h2>
+<figure data-type="image" tabindex="1"><img src="http://www.mjnotmj.fun/pic/15859783996013.jpg" alt="" loading="lazy"></figure>
+<h2 id="冯诺依曼体系结构">冯诺依曼体系结构</h2>
+<p>运算器、控制器、存储器、输入设备和输出设备</p>
+<h2 id="cpu主频">CPU主频</h2>
+<h3 id="进程的运行时间">进程的运行时间</h3>
+<p>对于计算机的性能，我们需要有个标准来衡量。这个标准中主要有两个指标。<br>
+第一个是<strong>响应时间</strong>（Response time）或者叫<strong>执行时间</strong>（Execution time）。想要提升响应时间这个性能指标，你可以理解为让计算机“跑得更快”。<br>
+第二个是<strong>吞吐率</strong>（Throughput）或者<strong>带宽</strong>（Bandwidth），想要提升这个指标，你可以理解为让计算机“搬得更多”。</p>
+<p>我们一般把性能，定义成响应时间的倒数 --- 性能 = 1 / 响应时间</p>
+<p>在<strong>用户态</strong>运行的时间，就是CPU要运行自己进程里指令的时间<br>
+在<strong>内核态</strong>运行的时间，就是CPU要运行自己进程里调用内核指令去服务自身的时间</p>
+<blockquote>
+<p>举一个例子，你去银行取钱，在柜台外需要挂号、签一些单据等自身需要完成的工作，接下来需要银行工作人员在银行系统内部去走你的取钱流程，包括登记信息、去保险柜钞票等（这些工作不可能让一般用户来做，可以理解成内核态）。所以整体来说，你完成一次取钱任务，消耗的总时间就是 “你自己填信息的时间” + “银行工作人员的时间”</p>
+</blockquote>
+<p>但是真正执行完整个进程的时间不一定是 user time + sys time，往往真实客观的时间要大。因为CPU是按时间片进行工作的，当前可能处理着好几个不同的进程，在操作系统的调度下协调完成。</p>
+<blockquote>
+<p>这就好比在银行大厅里，不光是你一个人在取钱，可能有好多人要办理不同的业务。这个时候银行大厅的服务资源是一定的（比如就一台挂号机，柜台工作人员就1位等）。这个时候据需要你排队等待服务了。当你真正完成取钱的工作时，其实要加上排队的时间。</p>
+</blockquote>
+<h3 id="时钟周期">时钟周期</h3>
+<p>在 CPU 内部，和我们平时戴的电子石英表类似，有一个叫晶体振荡器（Oscillator Crystal）的东西，简称为晶振。我们把晶振当成 CPU 内部的电子表来使用。晶振带来的每一次“滴答”，就是时钟周期时间。</p>
+<p>在我这个 2.8GHz 的 CPU 上，这个时钟周期时间，就是 1/2.8G。我们的 CPU，是按照这个“时钟”提示的时间来进行自己的操作。主频越高，意味着这个表走得越快，我们的 CPU 也就“被逼”着走得越快。</p>
+<p>程序的 CPU 执行时间 = 指令数 <strong>×</strong> CPI <strong>×</strong> Clock Cycle Time</p>
+<ol>
+<li>时钟周期时间，就是计算机主频，这个取决于计算机硬件。我们所熟知的摩尔定律就一直在不停地提高我们计算机的主频。比如说，我最早使用的 80386 主频只有 33MHz，现在手头的笔记本电脑就有 2.8GHz，在主频层面，就提升了将近 100 倍</li>
+<li>每条指令的平均时钟周期数 CPI，就是一条指令到底需要多少 CPU Cycle。在后面讲解 CPU 结构的时候，我们会看到，现代的 CPU 通过流水线技术（Pipeline），让一条指令需要的 CPU Cycle 尽可能地少。因此，对于 CPI 的优化，也是计算机组成和体系结构中的重要一环。</li>
+<li>指令数，代表执行我们的程序到底需要多少条指令、用哪些指令。这个很多时候就把挑战交给了编译器。同样的代码，编译成计算机指令时候，就有各种不同的表示方式。</li>
+</ol>
+<h2 id="性能瓶颈">性能瓶颈</h2>
+<p>想要CPU计算得快：1、增加晶体管数量 2、提高主频<br>
+多核CPU：通过并行提高性能</p>
+<h2 id="指令和运算">指令和运算</h2>
+<p>不同CPU使用不同的 <strong>计算机指令集</strong><br>
+常见的指令可以分成五大类</p>
+<ol>
+<li>第一类是<strong>算术类指令</strong>。我们的加减乘除，在 CPU 层面，都会变成一条条算术类指令。</li>
+<li>第二类是<strong>数据传输类指令</strong>。给变量赋值、在内存里读写数据，用的都是数据传输类指令。</li>
+<li>第三类是<strong>逻辑类指令</strong>。逻辑上的与或非，都是这一类指令。</li>
+<li>第四类是<strong>条件分支类指令</strong>。日常我们写的“if/else”，其实都是条件分支类指令。</li>
+<li>最后一类是<strong>无条件跳转指令</strong>。写一些大一点的程序，我们常常需要写一些函数或者方法。在调用函数的时候，其实就是发起了一个无条件跳转指令。</li>
+</ol>
+<h2 id="cpu执行指令">CPU执行指令</h2>
+<h2 id="stack-overflow">Stack Overflow</h2>
+<p>通过引入栈，我们可以看到，无论有多少层的函数调用，或者在函数 A 里调用函数 B，再在函数 B 里调用 A，这样的递归调用，我们都只需要通过维持 <strong>rbp</strong> 和 <strong>rsp</strong>，这两个维护栈顶所在地址的寄存器，就能管理好不同函数之间的跳转。</p>
+<p>对于叶子函数（内部不调用其他函数的函数），可以进行函数内联。编译的时候不进行跳转，pop或者push，直接展开函数。</p>
+<h2 id="编译-链接和装载拆解程序执行">编译、链接和装载：拆解程序执行</h2>
+<figure data-type="image" tabindex="2"><img src="http://www.mjnotmj.fun/pic/15859819659560.jpg" alt="-w424" loading="lazy"></figure>
+<h2 id="文件格式">文件格式</h2>
+<ol>
+<li>首先是.text Section，也叫作<strong>代码段</strong>或者指令段（Code Section），用来保存程序的代码和指令；</li>
+<li>接着是.data Section，也叫作<strong>数据段</strong>（Data Section），用来保存程序里面设置好的初始化数据信息；</li>
+<li>然后就是.rel.text Secion，叫作<strong>重定位表</strong>（Relocation Table）。重定位表里，保留的是当前的文件里面，哪些跳转地址其实是我们不知道的。比如上面的 link_example.o 里面，我们在 main 函数里面调用了 add 和 printf 这两个函数，但是在链接发生之前，我们并不知道该跳转到哪里，这些信息就会存储在重定位表里；</li>
+<li>最后是.symtab Section，叫作<strong>符号表</strong>（Symbol Table）。符号表保留了我们所说的当前文件里面定义的函数名称和对应地址的地址簿。<br>
+<img src="http://www.mjnotmj.fun/pic/15859821179324.jpg" alt="" loading="lazy"></li>
+</ol>
+<p>有个问题 动态库 什么时候去link？？</p>
+<h2 id="虚拟内存">虚拟内存</h2>
+<h3 id="分段">分段</h3>
+<p>这种找出一段连续的物理内存和虚拟内存地址进行映射的方法，我们叫分段（Segmentation）。这里的段，就是指系统分配出来的那个连续的内存空间。<img src="http://www.mjnotmj.fun/pic/15859823242722.png" alt="-w856" loading="lazy"><br>
+会带来问题<br>
+1、内存碎片<br>
+<img src="http://www.mjnotmj.fun/pic/15859823733277.png" alt="-w856" loading="lazy"><br>
+解决方法：先写到硬盘上  内存交换（Memory Swapping）。<br>
+<strong>虚拟内存</strong>、<strong>分段</strong>，再加上<strong>内存交换</strong>，看起来似乎已经解决了计算机同时装载运行很多个程序的问题。不过，你千万不要大意，这三者的组合仍然会遇到一个性能瓶颈。硬盘的访问速度要比内存慢很多，而每一次内存交换，我们都需要把一大段连续的内存数据写到硬盘上。所以，如果内存交换的时候，交换的是一个很占内存空间的程序，这样整个机器都会显得卡顿。</p>
+<h3 id="分页">分页</h3>
+<p>和分段这样分配一整段连续的空间给到程序相比，分页是把整个物理内存空间切成一段段固定尺寸的大小。而对应的程序所需要占用的虚拟内存空间，也会同样切成一段段固定尺寸的大小。这样一个连续并且尺寸固定的内存空间，我们叫页（Page）。从虚拟内存到物理内存的映射，不再是拿整段连续的内存的物理地址，而是按照一个一个页来的。页的尺寸一般远远小于整个程序的大小。在 Linux 下，我们通常只设置成 4KB。<br>
+<img src="http://www.mjnotmj.fun/pic/15859826168776.png" alt="-w856" loading="lazy"><br>
+更进一步地，分页的方式使得我们在加载程序的时候，不再需要一次性都把程序加载到物理内存中。我们完全可以在进行虚拟内存和物理内存的页之间的映射之后，并不真的把页加载到物理内存里，而是只在程序运行中，需要用到对应虚拟内存页里面的指令和数据时，再加载到物理内存里面去。</p>
+<h2 id="动态链接">动态链接</h2>
+<p>编译动态库<br>
+我们要怎么样才能做到，动态共享库编译出来的代码指令，都是地址无关码呢？</p>
+<p>在动态链接对应的共享库，我们在共享库的 data section 里面，保存了一张<strong>全局偏移表</strong>（GOT，Global Offset Table）。虽然共享库的代码部分的物理内存是共享的，但是数据部分是各个动态链接它的应用程序里面各加载一份的。所有需要引用当前共享库外部的地址的指令，都会查询 GOT，来找到当前运行程序的虚拟内存里的对应位置。而 GOT 表里的数据，则是在我们加载一个个共享库的时候写进去的。</p>
+<h2 id="二进制编码-门电路-不用看">二进制编码、门电路 不用看</h2>
+<h2 id="浮点数-定点数">浮点数、定点数</h2>
+<h2 id="处理器">处理器</h2>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/gcder/">
+                  <h3 class="post-title">
+                    GCD（二）
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

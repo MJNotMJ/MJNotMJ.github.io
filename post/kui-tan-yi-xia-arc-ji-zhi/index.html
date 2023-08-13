@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>窥探一下ARC机制 | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">窥探一下ARC机制</h2>
+            <div class="post-date">2019-05-26</div>
+            
+            <div class="post-content">
+              <p>ARC 是 iOS5 推出的，全称叫 ARC(Automatic Reference Counting)，即<strong>自动引用计数</strong>。既然说到“自动”，那就免不了来聊一聊“手动”、“引用计数”这两个概念。对于“手动”的理解可以追溯到 C 语言的内存管理机制，程序员要手动地创建、分配以及释放堆上的内存块，稍有不慎，就会导致内存泄漏。</p>
+<!-- more -->
+<h1 id="窥探一下arc机制">窥探一下ARC机制</h1>
+<h2 id="arc概述">ARC概述</h2>
+<p>ARC 是 iOS5 推出的，全称叫 ARC(Automatic Reference Counting)，即<strong>自动引用计数</strong>。既然说到“自动”，那就免不了来聊一聊“手动”、“引用计数”这两个概念。对于“手动”的理解可以追溯到 C 语言的内存管理机制，程序员要手动地创建、分配以及释放堆上的内存块，稍有不慎，就会导致内存泄漏。因为 OC 是 C 语言的超集，早期版本中有和 C 相似的“手动”管理内存的特性（ MRC ），需要程序员手动去retain、release创建的对象，而且必须遵循“谁创建谁释放”的原则。对于“引用计数”的理解，就得在上边所介绍的retain、release方法之上来描述了。OC 没有Java的那种GC机制，JVM 必须有专门的线程去维护垃圾回收。OC 使用的“引用计数”的内存管理机制，通过记录和跟踪某个对象被引用的次数，来管理这个对象的生命周期。retain使引用计数加1，release使引用计数减1，当系统发现当前对象的引用计数为0时，释放该对象的内存。<br>
+本质上，ARC是一种<strong>编译器</strong>行为作用的机制，OC 代码在 ARC 的编译环境下，编译器会自动检测代码并从中增加对于内存管理的代码，即编译器会给我们添加上 retain / release / autorelease 的方法来实现自动管理内存，它只是一种代码静态分析（ Static Analyzer ）工具。</p>
+<h2 id="图解arc实践">图解ARC实践</h2>
+<p>举一个简单的例子：创建一个 Person 类和一个 Book 类，创建各自的实例后，我们让 Person 的实例 p 强持有 Book 的实例 b。并在各自的 dealloc 方法里做一些打印。</p>
+<pre><code class="language--">Person *p = [[Person alloc] init];
+printf(&quot;retain count = %ld\n&quot;,CFGetRetainCount((__bridge CFTypeRef)(p)));
+Book *b = [[Book alloc] init];
+printf(&quot;retain count = %ld\n&quot;,CFGetRetainCount((__bridge CFTypeRef)(b)));
+p.book = b;
+printf(&quot;retain count = %ld\n&quot;,CFGetRetainCount((__bridge CFTypeRef)(p)));
+printf(&quot;retain count = %ld\n&quot;,CFGetRetainCount((__bridge CFTypeRef)(b)));
+    
+NSLog(@&quot;完了&quot;);
+
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">retain count = 1    // 创建了 p
+retain count = 1    // 创建了 b
+retain count = 1    // 创建了 p 强持有 b 后，p 的引用计数不变
+retain count = 2    // 创建了 p 强持有 b 后，b 的引用计数加1
+完了                 
+Person 释放了        // 先走 Person 的 dealloc 方法
+Book 释放了          // 再走 Book 的 dealloc 方法
+</code></pre>
+<p>以上实践就说明，内存管理的本质。当一个对象增加一个强持有时，它的引用计数加1，为的使新增加的这个<strong>强持有</strong>能在本实例的生命周期内随时访问到，不至于出现坏内存访问的崩溃。当这个<strong>强持有</strong>的指针置为nil时，就代表着不会访问本实例，两者已经没有了引用关系，所以这个时候本实例的引用计数会减1。当本实例不被内存中任何实例对象所引用（ 引用计数为0 ）时，也就是本实例不被任何实例对象所需要时，即成为一个“引用孤岛”时，那这个实例就没有了存在的意义，就会被系统回收并释放内存。<br>
+当上述代码走完函数作用域，平衡栈内存时，就会释放 p，再去释放 b。在 MRC 时代，一般都是在一个类中的 dealloc 方法里取释放这个类所持有的实例对象。</p>
+<div align=center>
+<img width="360" height="270" src="https://upload-images.jianshu.io/upload_images/743228-18cec76e4bb01461.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"/>
+<img width="360" height="270" src="https://upload-images.jianshu.io/upload_images/743228-c92e401e8f1ee483.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"/>
+</div>
+<p>上述图片描述了对象在内存模型里的存在状况，任何对象都是通过栈内存中的指针去引用，然后一层一层去引用其他对象实例。程序员都是在栈内存环境下通过栈指针的索引来拨开一层一层的引用访问到相应对象的内存空间。</p>
+<div align=center>
+<img width="360" height="270" src="https://upload-images.jianshu.io/upload_images/743228-ed6465afbab108c5.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"/>
+<img width="360" height="270" src="https://upload-images.jianshu.io/upload_images/743228-3f64010b2c7a8353.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"/>
+</div>
+<p>上述图片描述了循环引用的对象内存状况，当栈内存中的 <code>*p</code> 指针要置空时，堆内的两个实例对象和还在相互<strong>强引用</strong>着，两者的引用计数都不可能为0。这个时候栈指针已经丢失了它所引用着的堆内存中的空间，可是堆内存中的两块空间不可能释放，于是造成了<strong>内存泄漏</strong>，堆内存中的那块空间在程序运行期间不可能被释放，除非重新初始化程序。所以，我们会使用<strong>弱引用</strong>来保证既能访问到想要的实例，又不增加此实例的引用计数。当此实例被释放后，弱引用指针通过 Runtime 自动置空，也不用担心给一个空对象发送消息导致程序崩溃。这就是日常开发中解决循环引用的本质手段。</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/diao-xi-yi-xia-arc-ji-zhi/">
+                  <h3 class="post-title">
+                    调戏一下ARC机制
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

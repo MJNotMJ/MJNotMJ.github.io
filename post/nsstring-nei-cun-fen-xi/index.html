@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>NSString 内存分析 | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">NSString 内存分析</h2>
+            <div class="post-date">2020-11-04</div>
+            
+            <div class="post-content">
+              <!-- more -->
+<figure data-type="image" tabindex="1"><img src="http://www.mjnotmj.fun/pic/20210412175451.png" alt="" loading="lazy"></figure>
+<h2 id="nsstring-内存">NSString 内存</h2>
+<p>NSString  的 几种类型</p>
+<ol>
+<li>__NSCFConstantString   Constant [ˈkɑːnstənt] 常量，常数</li>
+<li>NSTaggedPointerString</li>
+<li>__NSCFString</li>
+</ol>
+<p>实例代码</p>
+<pre><code>
+    #import &lt;malloc/malloc.h&gt; // 引用头文件
+
+    #define StrLog(_c) NSLog(@&quot;引用计数：%@ -- 堆中实际分配: %zd -- 地址：%p -- 类型：%@&quot;,[_c valueForKey:@&quot;retainCount&quot;], malloc_size((__bridge const void *)(_c)), _c, [_c class]);
+
+    NSString *str1 = @&quot;123456789&quot;; // __NSCFConstantString
+    StrLog(str1);
+    
+    NSString *str2 = @&quot;1234567890&quot;; // __NSCFConstantString
+    StrLog(str2);
+    
+    NSString *str3 = @&quot;12345678901212345678901212345678901212345sasasa&quot;; // __NSCFConstantString
+    StrLog(str3);
+    
+    NSString *str4 = [NSString stringWithFormat:@&quot;123456789&quot;]; // NSTaggedPointerString
+    StrLog(str4);
+    
+    NSString *str5 = [NSString stringWithFormat:@&quot;1234567890&quot;]; // __NSCFString
+    StrLog(str5);
+    
+    NSString *str6 = [NSString stringWithFormat:@&quot;12345678901212345678901212345678901212345sasasa&quot;]; // __NSCFString
+    StrLog(str6);
+
+</code></pre>
+<p>打印结果</p>
+<pre><code> 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b3f3f00 -- 类型：__NSCFConstantString
+ 
+ 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b3f3f60 -- 类型：__NSCFConstantString
+ 
+ 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b3f3f80 -- 类型：__NSCFConstantString
+ 
+ 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x953b7922756a4456 -- 类型：NSTaggedPointerString
+ 
+ 引用计数：2 -- 堆中实际分配: 32 -- 地址：0x600002545880 -- 类型：__NSCFString
+ 
+ 引用计数：2 -- 堆中实际分配: 80 -- 地址：0x600000625ea0 -- 类型：__NSCFString
+
+</code></pre>
+<p>1、引用计数器的值为18446744073709551615,即为2^64-1，当引用计数器的值为-1或者无穷大的时候，说明不满足内存管理法则，既系统并不是通过内存黄金法则来释放的。也就是对str10进行retain,release操作都是没有用的。<br>
+2、str10对象在堆中实际没有分配空间，只有存放在堆区中的对象才满足内存管理法则。<br>
+3、str10对象的地址是低地址，排除代码区和常量区，所以我猜测__NSCFConstantString类型的对象存放在 初始化过的静态区：data段，继续往下走我们会验证这一猜想。</p>
+<figure data-type="image" tabindex="2"><img src="https://tvax3.sinaimg.cn/large/e48133b2ly1g8vbbs00i8j20u80gkq7p.jpg" alt="33217A46-A84E-4454-B11F-6FC47A56597D" loading="lazy"></figure>
+<pre><code>引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x103883f00 -- 类型：__NSCFConstantString
+(lldb) p/x str1
+(__NSCFConstantString *) $0 = 0x0000000103883f00 @&quot;123456789&quot;
+(lldb) p/x str1-&gt;isa
+(Class) $1 = 0x00000001050ed5c0 __NSCFConstantString
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://tvax3.sinaimg.cn/large/e48133b2ly1g8vbgsq43uj21u40rqwxz.jpg" alt="C6F734F7-10FE-45F6-8E72-E6AD514AFF79" loading="lazy"></figure>
+<figure data-type="image" tabindex="4"><img src="https://tvax3.sinaimg.cn/large/e48133b2ly1g8vblpub6yj21ti0r8wyj.jpg" alt="6A020E56-4E9C-4416-9CBA-E8546491D361" loading="lazy"></figure>
+<ul>
+<li>0~8 字节---&gt; C0 D5 0E 05 01 00 00 00 isa指针</li>
+<li>9~16 字节--&gt; C8 07 00 00 00 00 00 00 一脸懵逼  8个字节可能会存放字符串的编码方式，以及对象类型</li>
+<li>17~24 字节-&gt; 53 8A 87 03 01 00 00 00 看起来像个地址</li>
+<li>25~32字节-&gt; 09 00 00 00 00 00 00 00     09</li>
+</ul>
+<p>打印  0x0000000103878a53 的地址</p>
+<figure data-type="image" tabindex="5"><img src="https://tvax4.sinaimg.cn/large/e48133b2ly1g8vbr4gvuoj21ua0t6tum.jpg" alt="C60E3C7C-0CD0-45C4-8F8F-E79E10695AD0" loading="lazy"></figure>
+<p>0x10387110e</p>
+<p>1、__NSCFConstantString类型的对象是特殊对象。其特殊性体现在可以用static修饰，存放在data段，不满足内存管理法则。<br>
+2、所有@&quot;.....&quot;都会在内存中生成__NSCFConstantString类型的对象。<br>
+3、__NSCFConstantString类型的对象在内存中占用32个字节，用来存放isa指针，（编码形式，对象类型），字符串常量的地址以及字符串长度。<br>
+4、字符串的值（字符串常量）存放在文字常量区。</p>
+<pre><code>    NSString *str7 = [[NSString alloc] initWithString:@&quot;222222222222222222222&quot;];
+    StrLog(str7);
+    
+    // Using 'initWithString:' with a literal is redundant
+    
+    NSString *str8 = [NSString stringWithString:@&quot;2222222222222222&quot;];
+    StrLog(str8);
+    
+    // Using 'stringWithString:' with a literal is redundant
+    
+</code></pre>
+<pre><code> 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b12efa0 -- 类型：__NSCFConstantString
+ 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b12efc0 -- 类型：__NSCFConstantString
+</code></pre>
+<p>上边也是 静态区</p>
+<p>但是 stringWithFormat 不一样，因为可以拼接 所以 字数少的情况下 放到栈上的      NSTaggedPointerString，字数多的情况下，放到堆上的 __NSCFString</p>
+<h3 id="nsstring-类簇">NSString 类簇</h3>
+<p>继承关系<br>
+__NSCFConstantString -&gt; __NSCFString -&gt; NSMutableString -&gt; NSString -&gt; NSObject</p>
+<p>NSTaggedPointerString -&gt; NSString -&gt; NSObject</p>
+<p><a href="https://xiaozhuanlan.com/topic/1045826397">一个讲TaggedPointer的文章</a></p>
+<p>https://www.jianshu.com/p/a5b6e5838b0a</p>
+<p>https://www.jianshu.com/p/640f173b5583</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://MJNotMJ.github.io/tag/t6sfGhhUR/" class="tag">
+                    iOS
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/shen-ru-qian-chu-ji-suan-ji-zu-cheng-yuan-li/">
+                  <h3 class="post-title">
+                    深入浅出计算机组成原理
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

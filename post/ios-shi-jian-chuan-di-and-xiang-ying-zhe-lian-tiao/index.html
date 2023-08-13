@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>iOS 事件传递 &amp;&amp; 响应者链条 | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">iOS 事件传递 &amp;&amp; 响应者链条</h2>
+            <div class="post-date">2019-11-13</div>
+            
+            <div class="post-content">
+              <h3 id="ios-事件传递-响应者链条">iOS 事件传递 &amp;&amp; 响应者链条</h3>
+<figure data-type="image" tabindex="1"><img src="https://tva2.sinaimg.cn/large/e48133b2ly1g8winnwhv6j20or0w2h4g.jpg" alt="UIResponder" loading="lazy"></figure>
+<p>UIResponder 处理三种事件</p>
+<pre><code>// 触摸事件
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event;
+
+// 加速计事件
+- (void)motionBegan:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+- (void)motionEnded:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+- (void)motionCancelled:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+
+// 远程控制事件
+- (void)remoteControlReceivedWithEvent:(UIEvent *)event;
+
+</code></pre>
+<h3 id="uitouch">UITouch</h3>
+<p>UITouch的作用就是它会保存着这个手指相关的一些信息，触摸时间，位置，阶段等之类的信息。<br>
+当手指移动时，系统会更新同一个UITouch对象，使之能够一直保存该手指在的触摸位置<br>
+当手指头离开屏幕的时候，那么与之对应的UITouch对象就会销毁了。</p>
+<h3 id="事件的传递">事件的传递</h3>
+<p>当用户的手指触摸屏幕的某一个view的时候，此时就发生了触摸事件，系统会把该事件加入UIApplication管理的事件队列中去。通常，先发送事件给应用程序的主窗口（keyWindow），主窗口会在视图层次结构上面找到一个<strong>最合适</strong>的视图来处理触摸事件</p>
+<p>触摸事件的传递是由父控件传递到子控件的</p>
+<p>如果父控件不能接受触摸事件，那么子控件就不可能接受触摸事件</p>
+<ul>
+<li>不允许与用户交互userInteractionEnabled = NO</li>
+<li>这个控件隐藏了hidden = YES</li>
+<li>透明度太小了alpha = 0.0 ~ 0.01</li>
+</ul>
+<ol>
+<li>首先它会判断它自己是否能接受触摸事件，如果它不能接收触摸事件，那么它肯定不是最合适的，</li>
+<li>然后再判断用户手指的触摸点是否在它自己的身上，如果不在，那么他就不是最合适的</li>
+<li>执行完上面两个操作，然后从后往前遍历子控件（意思是先遍历后加入的子控件），然后重复上面的两个步骤</li>
+<li>如果没有找到复合条件的子控件，那么它自己就是最适合处理事件的控件</li>
+</ol>
+<pre><code>- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event // 来查找最合适处理事件的方法
+
+- (BOOL)pointInside:(CGPoint)point withEvent:(nullable UIEvent *)event // 来判断触摸点是否在其身上
+
+
+</code></pre>
+<h3 id="响应者链条事件的处理">响应者链条（事件的处理）</h3>
+<p>当用户点击屏幕后产生一个触摸事件，经过经过一系列的传递过程后，会找到最合适的视图控件来处理这个事件，找到最合适的视图之后，就会调用空间的touches那三个方法，这些方法的默认做法是把事件顺着响应者链条向上传递，将事件传递给上一个响应者进行处理</p>
+<figure data-type="image" tabindex="2"><img src="https://tvax1.sinaimg.cn/large/e48133b2ly1g8wj675izxj20xc0j7q7w.jpg" alt="响应者链条" loading="lazy"></figure>
+<p>首先initial view会把事件传递给橘黄色的view，橘黄色view又把事件给时间传递给了蓝绿色view，蓝绿色view把时间传递给了控制器view，控制器view把事件传递给了窗口，窗口把事件传递给了Application对象。</p>
+<h4 id="事件传递的完整过程">事件传递的完整过程</h4>
+<p>先将事件对象由上往下传递(由父控件传递给子控件)，找到最合适的控件来处理这个事件，调用最合适控件的touches….方法，如果调用了[super touches….]那么就会将事件顺着响应者链条往上传递，传递给上一个响应者，接着就会调用上一个响应者的touches….方法</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/uiwindow/">
+                  <h3 class="post-title">
+                    UIWindow
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

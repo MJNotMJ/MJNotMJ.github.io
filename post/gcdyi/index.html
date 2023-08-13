@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>GCD（一） | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">GCD（一）</h2>
+            <div class="post-date">2020-03-04</div>
+            
+            <div class="post-content">
+              <p>线程（环境）<br>
+队列（任务派发的机制）串行队列、并发队列<br>
+任务（要执行的操作）同步任务（等待队列前边没有任务派发，在当前线程）、异步任务（马上执行，可以接受在其他线程执行，要看任务派发机制的安排）</p>
+<h2 id="任务无嵌套">任务无嵌套</h2>
+<h5 id="新建串行队列-主线程调用-同步任务">（新建）串行队列 +（主线程调用） 同步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_sync(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;_NSMainThread: 0x6000032c8440&gt;{number = 1, name = main}
+</code></pre>
+<p>没有开启新线程，串行执行任务</p>
+<h5 id="新建串行队列-主线程调用-异步任务">（新建）串行队列 +（主线程调用） 异步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_async(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;NSThread: 0x600003447140&gt;{number = 2, name = (null)}
+</code></pre>
+<p>有开启新线程（1条），串行执行任务</p>
+<h5 id="主队列-主线程调用-同步任务">主队列 +（主线程调用） 同步任务</h5>
+<pre><code>    dispatch_queue_t mainQueue = dispatch_get_main_queue();
+    dispatch_sync(mainQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+EXC_BAD_INSTRUCTION
+</code></pre>
+<p>崩溃，主队列中追加的同步任务 和 主线程本身的任务 两者之间相互等待死锁</p>
+<h5 id="主队列-主线程调用-异步任务">主队列 +（主线程调用） 异步任务</h5>
+<pre><code>    dispatch_queue_t mainQueue = dispatch_get_main_queue();
+    dispatch_async(mainQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;_NSMainThread: 0x600002c78700&gt;{number = 1, name = main}
+</code></pre>
+<p>没有开启新线程，串行执行任务</p>
+<h5 id="新建并发队列-主线程调用-同步任务">（新建）并发队列 +（主线程调用） 同步任务</h5>
+<pre><code>    dispatch_queue_t concurrentQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_CONCURRENT);
+    dispatch_sync(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;_NSMainThread: 0x6000019b0440&gt;{number = 1, name = main}
+</code></pre>
+<p>没有开启新线程，串行执行任务</p>
+<h5 id="新建并发队列-主线程调用-异步任务">（新建）并发队列 +（主线程调用） 异步任务</h5>
+<pre><code>    dispatch_queue_t concurrentQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_CONCURRENT);
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;NSThread: 0x600003283b40&gt;{number = 3, name = (null)}
+</code></pre>
+<p>开启新线程，并发执行任务</p>
+<h5 id="新建并发队列-子线程调用-异步任务">（新建）并发队列 +（子线程调用） 异步任务</h5>
+<pre><code>    dispatch_queue_t concurrentQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_CONCURRENT);
+
+    NSThread *newThread = [[NSThread alloc] initWithBlock:^{
+        NSLog(@&quot;创建新线程_%@&quot;, [NSThread currentThread]);
+
+        dispatch_async(concurrentQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+        dispatch_async(concurrentQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+        dispatch_async(concurrentQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;3---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+
+
+    }];
+    [newThread start];
+</code></pre>
+<pre><code>// 打印结果
+创建新线程_&lt;NSThread: 0x600002504c00&gt;{number = 7, name = (null)}
+1---&lt;NSThread: 0x600002519000&gt;{number = 5, name = (null)}
+2---&lt;NSThread: 0x600002501bc0&gt;{number = 6, name = (null)}
+3---&lt;NSThread: 0x600002518280&gt;{number = 2, name = (null)}
+</code></pre>
+<p>有开启新线程(多个)，并发执行任务</p>
+<h4 id="总结表格">总结表格</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">串行队列</th>
+<th style="text-align:center">主队列</th>
+<th style="text-align:center">并发队列</th>
+<th style="text-align:center">全局并发队列</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">同步（sync）主线程</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">死锁卡住不执行</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">异步（async）主线程</td>
+<td style="text-align:center">有开启新线程（1条），串行执行任务</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">有开启新线程(多个)，并发执行任务</td>
+<td style="text-align:center">有开启新线程(多个)，并发执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">同步（sync）子线程</td>
+<td style="text-align:center">没有开启新线程，还在当前子线程，串行执行任务</td>
+<td style="text-align:center">回到主线程，串行执行任务</td>
+<td style="text-align:center">没有开启新线程，还在当前子线程，串行执行任务</td>
+<td style="text-align:center">没有开启新线程，还在当前子线程，串行执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">异步（async）子线程</td>
+<td style="text-align:center">有开启新线程（1条），不在当前子线程，串行执行任务</td>
+<td style="text-align:center">回到主线程，串行执行任务</td>
+<td style="text-align:center">有开启新线程(多个)，并发执行任务</td>
+<td style="text-align:center">有开启新线程(多个)，并发执行任务</td>
+</tr>
+</tbody>
+</table>
+<h2 id="任务有嵌套">任务有嵌套</h2>
+<h5 id="新建串行队列-主线程调用-同步任务-嵌套-同步任务">（新建）串行队列 +（主线程调用） 同步任务 + 嵌套 同步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_sync(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_sync(serialQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+    });
+</code></pre>
+<pre><code>// 打印结果
+1---&lt;_NSMainThread: 0x600002a40300&gt;{number = 1, name = main}
+</code></pre>
+<p>崩溃，serialQueue 已经有了同步任务，还要追加同步任务</p>
+<h5 id="新建串行队列-主线程调用-同步任务-嵌套-异步任务">（新建）串行队列 +（主线程调用） 同步任务 + 嵌套 异步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_sync(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_async(serialQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+    });
+</code></pre>
+<pre><code>// 打印结果
+1---&lt;_NSMainThread: 0x600002a40300&gt;{number = 1, name = main}
+2---&lt;NSThread: 0x600000cd7bc0&gt;{number = 6, name = (null)}
+</code></pre>
+<p>开启新线程，串行执行任务</p>
+<h5 id="新建串行队列-主线程调用-异步任务-嵌套-同步任务">（新建）串行队列 +（主线程调用） 异步任务 + 嵌套 同步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_async(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_sync(serialQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+    });
+</code></pre>
+<pre><code>// 打印结果
+1---&lt;NSThread: 0x60000196b900&gt;{number = 6, name = (null)}
+</code></pre>
+<p>崩溃，开启了新线程，却要再追加同步任务，因为当前的异步任务还没执行完</p>
+<h5 id="新建串行队列-主线程调用-异步任务-嵌套-异步任务">（新建）串行队列 +（主线程调用） 异步任务 + 嵌套 异步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_async(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_async(serialQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+    });
+</code></pre>
+<pre><code>// 打印结果
+1---&lt;NSThread: 0x600002ff0640&gt;{number = 4, name = (null)}
+2---&lt;NSThread: 0x600002ff0640&gt;{number = 4, name = (null)}
+</code></pre>
+<p>开启了新线程，串行执行任务</p>
+<h4 id="总结表格-串行队列">总结表格 串行队列</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">嵌套 同步（sync）</th>
+<th style="text-align:center">嵌套 异步（async）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">同步（sync）</td>
+<td style="text-align:center">崩溃</td>
+<td style="text-align:center">开启新线程（1 条），串行执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">异步（async）</td>
+<td style="text-align:center">崩溃</td>
+<td style="text-align:center">开启新线程（1 条），串行执行任务</td>
+</tr>
+</tbody>
+</table>
+<h4 id="总结表格-并发队列">总结表格 并发队列</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">嵌套 同步（sync）</th>
+<th style="text-align:center">嵌套 异步（async）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">同步（sync）</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">有开启新线程，并发执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">异步（async）</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">有开启新线程，并发执行任务</td>
+</tr>
+</tbody>
+</table>
+<h2 id="结论">结论</h2>
+<p>形象理解：<br>
+有 5 个人要穿过一道门禁，这道门禁总共有 10 个入口，管理员可以决定同一时间打开几个入口，可以决定同一时间让一个人单独通过还是多个人一起通过。不过默认情况下，管理员只开启一个入口，且一个通道一次只能通过一个人。<br>
+<strong>人好比是 任务，管理员好比是 系统，入口则代表 线程。</strong><br>
+5 个人表示有 5 个任务，10 个入口代表 10 条线程。<br>
+串行队列 好比是 5 个人排成一支长队。<br>
+并发队列 好比是 5 个人排成多支队伍，比如 2 队，或者 3 队。<br>
+同步任务 好比是管理员只开启了一个入口（当前线程）。<br>
+异步任务 好比是管理员同时开启了多个入口（当前线程 + 新开的线程）。</p>
+<p>同步任务就是认准当前线程，异步任务看情况</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/shu-zi-qian-ming-and-ren-zheng/">
+                  <h3 class="post-title">
+                    数字签名 &amp;&amp; 认证 
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

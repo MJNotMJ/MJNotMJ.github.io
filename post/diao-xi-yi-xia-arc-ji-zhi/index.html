@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>调戏一下ARC机制 | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">调戏一下ARC机制</h2>
+            <div class="post-date">2019-05-26</div>
+            
+              <div class="feature-container" style="background-image: url('https://upload-images.jianshu.io/upload_images/743228-96492f9dd1265c3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240')">
+              </div>
+            
+            <div class="post-content">
+              <p>能不能主动操作内存来进行访问呢？到底能不能在 ARC 下主动释放我们想要释放的对象？这是个很值得思考的问题。于是，我们可以借助 ARC 的规则，“借力打力”实践一下，挑战 ARC 的自动释放内存的机制。</p>
+<!-- more -->
+<h1 id="调戏一下arc机制">调戏一下ARC机制</h1>
+<p>通过上一篇<a href="">窥探一下ARC机制</a>了解了 iOS 基本的内存管理机制，在 ARC 编译环境下，我们不能手动的给对象发送 release、retain 消息，我们只要遵循 ARC 下的机制，合理地创建对象，释放对象的引用指针，那么编译器会很好的帮我们添加代码，实现轻松管理内存。</p>
+<p>能不能主动操作内存来进行访问呢？到底能不能在 ARC 下主动释放我们想要释放的对象？这是个很值得思考的问题。于是，我们可以借助 ARC 的规则，“借力打力”实践一下，挑战 ARC 的自动释放内存的机制。</p>
+<h2 id="随意访问内存空间">随意访问内存空间</h2>
+<p>在<a href="">从硬件层面理解指针</a>这篇文章里我们已经很详细的讲述了<strong>对象</strong>和<strong>指针</strong>之间的物理关系。也就是说，我们只要知道堆中<strong>某个对象的数据类型，以及对象的首地址</strong>，我们就可以随意对其内部的数据进行访问。只不过之前我们都是通过栈中指针的引用来一层层索引我们想要访问的对象，这时候 ARC 根据引用计数的规则帮我们管理内存。现在，我们知道原理之后，通过记录某个指针指向堆中对象首地址的真实值，来访问这个对象。</p>
+<p>场景1：我们创建两个控制器 PO_1_ViewController 、 PO_2_ViewController，PO_1_ViewController 上有两个 button，在 PO_1_ViewController 之上 push 进入 PO_2_ViewController 控制器，并在 PO_2_ViewController 中改变之前 PO_1_ViewController 控制器 button 的 Title。</p>
+<p>以上是一个典型的反向传值的问题，我们可以用代理、block、通知中心等等方法去实现。下面我们就要实践一下不通过 Cocoa 提供的这些机制，随意访问内存并修改值。</p>
+<pre><code class="language--">// 在控制器 PO_1_ViewController 中
+unsigned long int vc_address = (unsigned long int)self;
+NSUserDefaults *defaults1 = [NSUserDefaults standardUserDefaults];
+// double 是8个字节
+[defaults1 setDouble:(double)vc_address forKey:@&quot;vc_address&quot;];
+[defaults1 synchronize];
+
+</code></pre>
+<p>因为64位系统的指针都是8个字节，通过 unsigned long int 的数据结构去记录这个指针的真实地址，并存储到 NSUserDefaults 里供全局访问。</p>
+<pre><code class="language--">// 在控制器 PO_2_ViewController 中
+// 拿出 控制器的地址
+double vc_address = [defaults doubleForKey:@&quot;vc_address&quot;];
+PO_1_ViewController *vc = (PO_1_ViewController *)[[ReplaceObject alloc] init];
+unsigned long int replace_address = (unsigned long int)vc;
+void *dsdsdsd_address = &amp;vc;
+*(unsigned long int *)dsdsdsd_address = (unsigned long int)vc_address;
+[vc.button1 setTitle:@&quot;改变了&quot; forState:UIControlStateNormal];
+NSLog(@&quot;================修改成功，下面杀死替死鬼==============&quot;);
+*(unsigned long int *)dsdsdsd_address = (unsigned long int)replace_address;
+</code></pre>
+<p>打印结果</p>
+<pre><code class="language--">替死鬼 &lt;ReplaceObject: 0x60400001a480&gt; 创建了
+================修改成功，下面杀死替死鬼==============
+替死鬼 &lt;ReplaceObject: 0x60400001a480&gt; 杀死了
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://upload-images.jianshu.io/upload_images/743228-eb69184133bc82ac.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="调戏ARC1_gaitubao_com_watermark.png" loading="lazy"></figure>
+<p>在 PO_2_ViewController 中拿出可以全局访问的 PO_1_ViewController 实例的地址。然后通过 ReplaceObject “替死鬼”类获得一个 PO_1_ViewController 的数据结构。并把这个局部变量的指针强行指向我们之前记录的 PO_1_ViewController 实例的地址。这样我们就完成了“只要知道堆中某个对象的数据类型，以及对象的首地址”的操作。这个时候拿着这两个信息，我们就可以通过 setTitle 方法来修改 PO_1_ViewController 实例中 button 的 Title 了。但是因为 ARC 的机制我们修改完之后不能扔下就不管了，这样 ARC 会在函数作用域完之后释放局部变量指向的堆空间，也就是说会把我们之前的 PO_1_ViewController 实例释放掉。所以修改完之后，我们把我们之前创建的“替死鬼”类的引用还回来，让 ARC 机制去释放这个“替死鬼”，从而避免了混乱。这样我们就在 ARC 的“眼皮”底线实现了对任意内存中存在的实例的访问。</p>
+<h2 id="强制释放某个对象">强制释放某个对象</h2>
+<p>有时候在实际开发中我们经常为一些循环引用导致的内存泄漏，甚至是逻辑混乱而大伤头脑，尤其是一些循环引用的圈比较大的情况下，排查起来非常困难。当然，形成这些情况的根本原因就是自身对于内存管理的理解使用不太透彻，导致编码出现问题；也可能是在集成三方库的过程中一些黑盒代码处理不当引起的循环（ 笔者曾经遇到过一次因为开源代码中的宏定义引起的引用循环 ）。所以，在 ARC 编译环境下，我们能强制释放某个对象，打破循环链条，就是一个“奇巧淫技”了！（ 不过不提倡使用，还是乖乖按规矩来的好 ）</p>
+<p>场景2：还是上边的两个控制器，PO_1_ViewController 中有一个强引用的指针 someone1，我们要在 PO_2_ViewController 中强制释放它。</p>
+<pre><code class="language--">// 在控制器 PO_1_ViewController 中
+// 一个强引用的指针  引用着一个 Person 实例对象
+self.someone1 = [[Person alloc] init];
+// 64位系统的 对象指针占8个字节。
+// 用 unsigned long int 这个去记录指针里的内容（即实例对象的首地址）
+unsigned long int someone1_address = (unsigned long int)self.someone1;
+// 这时候打印这个 无符号长整型 转换成16进制后  和  NSLog(@&quot;%@&quot;,self.someone1)打印的对象首地址一样
+// 也就是说，我已经记录下 这个实例对象 的首地址
+NSLog(@&quot;someone1实例---%@&quot;,self.someone1);
+NSLog(@&quot;someone1实例的首地址（10进制表示）---%lu&quot;,someone1_address);
+NSLog(@&quot;=====================================================&quot;);
+NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+// double 是8个字节
+[defaults setDouble:(double)someone1_address forKey:@&quot;address&quot;];
+[defaults synchronize];
+</code></pre>
+<p>还是之前的套路，创建一个 Person 实例，并在 PO_1_ViewController 中强持有它。然后记录这个指针的在堆中的真实地址，并存储到 NSUserDefaults 里供全局访问。</p>
+<pre><code class="language--">// 在控制器 PO_2_ViewController 中
+NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+double address = [defaults doubleForKey:@&quot;address&quot;];
+Person *someone2;
+NSLog(@&quot;someone2实例的指针的地址---%p&quot;,&amp;someone2);
+void *someone2_address = &amp;someone2;
+// 这个值就是 指针里的内容  即对象的首地址
+NSLog(@&quot;someone2实例---%@&quot;,someone2);
+NSLog(@&quot;someone2实例的首地址（10进制表示)---%lu&quot;,*(unsigned long int *)someone2_address);
+*(unsigned long int *)someone2_address = (unsigned long int)address;
+NSLog(@&quot;%@&quot;,someone2);
+self.someone2 = someone2;
+NSLog(@&quot;名字----%@&quot;,self.someone2.name);
+</code></pre>
+<p>在 PO_2_ViewController 中拿出 Person 实例的真实地址，并创建一个 Person 的数据结构 someone2，然后还是之前的套路，强制 someone2 指向之前记录的 Person 实例的真实地址。并进行验证性打印 Person 实例的 name 属性，发现就是我们之前创建的那个 Person 实例。之后把获取的这个局部变量的指针被 PO_2_ViewController 强引用起来，然后在 POP 控制器，在 PO_1_ViewController 中看看 Person 实例还存不存在？（ 点击button2 打印 self.someone1 ）</p>
+<p>打印结果</p>
+<pre><code class="language--">PO_1 控制器 &lt;PO_1_ViewController: 0x7fc7274628a0&gt; 创建了
+Person类的实例 &lt;Person: 0x600000011830&gt; 初始化了
+someone1实例---&lt;Person: 0x600000011830&gt;
+someone1实例的首地址（10进制表示）---105553116338224
+=====================================================
+页面出现---&lt;Person: 0x600000011830&gt;
+点击了button1
+PO_2 控制器 &lt;PO_2_ViewController: 0x7fc727508a40&gt; 创建了
+someone2实例的指针的地址---0x7ffee983f238
+someone2实例---(null)
+someone2实例的首地址（10进制表示)---0
+&lt;Person: 0x600000011830&gt;
+名字----name
+// POP 控制器后
+页面出现---&lt;Person: 0x600000011830&gt;
+PO_2 控制器 &lt;PO_2_ViewController: 0x7fc727508a40&gt; 销毁了
+Person类的实例 &lt;Person: 0x600000011830&gt; 释放了
+</code></pre>
+<p>这个时候点击 button2 发现崩溃</p>
+<figure data-type="image" tabindex="2"><img src="https://upload-images.jianshu.io/upload_images/743228-96492f9dd1265c3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="调戏ARC2_gaitubao_com_watermark.png" loading="lazy"></figure>
+<h2 id="一个大胆的猜想">一个大胆的猜想</h2>
+<p>上边两个场景让我们在 ARC 的机制下“很皮”地玩了一下内存，那么问题来了。现在我们可以记录了实例的内存地址，但是还原这个实例的时候我们还是得引入这个类的头文件来创建数据结构接这个地址。我们能不能在类的 load 装载方法里，把这个类的对象地址也记录下来呢？到时候一个实例对象的地址，一个类地址，我们就可以在任意位置没有耦合地随意访问了，当然前提是内存中已经创建了对应类的实例对象了。</p>
+<p>话又说回来，这样的安全性就没办法保证了，所以留待以后探究啦！</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/cong-ying-jian-ceng-mian-li-jie-zhi-zhen/">
+                  <h3 class="post-title">
+                    从硬件层面理解指针
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

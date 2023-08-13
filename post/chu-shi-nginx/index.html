@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>初识Nginx | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">初识Nginx</h2>
+            <div class="post-date">2019-05-26</div>
+            
+            <div class="post-content">
+              <p>Nginx 是一个 http 服务器。是一个使用c语言开发的高性能的 <strong>http 服务器</strong>及<strong>反向代理服务器</strong>。</p>
+<!-- more -->
+<h1 id="初识nginx">初识Nginx</h1>
+<h2 id="背景">背景</h2>
+<ul>
+<li>Apache    HTTP Server</li>
+<li>Nginx     HTTP Server</li>
+<li>Tomcat    Application Server      更准确的说是 Servlet / JSP 的应用容器</li>
+</ul>
+<h2 id="nginx-是什么">Nginx 是什么</h2>
+<p>Nginx 是一个 http 服务器。是一个使用c语言开发的高性能的 <strong>http 服务器</strong>及<strong>反向代理服务器</strong>。</p>
+<h3 id="nginx-应用场景">Nginx 应用场景</h3>
+<ol>
+<li><strong>http服务器</strong>。Nginx是一个 http 服务可以独立提供 http 服务。可以做网页静态服务器。</li>
+<li><strong>虚拟主机</strong>。可以实现在一台服务器虚拟出多个网站。例如个人网站使用的虚拟主机。</li>
+<li><strong>反向代理，负载均衡</strong>。当网站的访问量达到一定程度后，单台服务器不能满足用户的请求时，需要用多台服务器集群可以使用 Nginx 做反向代理。并且多台服务器可以平均分担负载，不会因为某台服务器负载高宕机而某台服务器闲置的情况。</li>
+</ol>
+<h3 id="反向代理服务器-是什么">反向代理服务器 是什么</h3>
+<p>反向代理（ Reverse Proxy ）[rɪ'vɝs]</p>
+<p>那举一反三，既然有反向代理，那肯定也有正向代理，两个概念对比着来看。</p>
+<p>正向代理，其实就是我们平常所说的“ 代理服务器 ”，应用最多的场景就是突破 GFW 的封锁，去访问 Google 的互联网服务。先简单介绍一下 GFW 的封锁原理。首先在国内所有互联网服务提供商都被几家国有的大型企业所垄断，也就是说在国内所有的能上网的 IP 都是由这些寡头所分配，人家肯定知道你的 IP 是多少，于是当你的 IP 去访问 Google 的 IP 时，这些互联网的运营商就会对你的请求数据包进行拦截，这就是所谓的 GFW 的最基本的拦截原理。</p>
+<p>GFW 知道 Google 的 IP 很正常，但是全球这么多 IP 地址它不可能都去封锁。所以，可以在国外架设一个代理服务器去替国内的客户端访问 Google 的服务，然后再由这个代理服务器把返回的结果告诉国内的客户端。在 GFW 看来，国内的 IP 只是访问了一个国外 IP 而已，它不知道国外这个普通的IP到底是干什么的，而且也不可能知道。所以，通过这种方式就把 GFW 能监管的那部分移到了国外进行，从而实现了“ 翻墙 ”。<br>
+以上就是<strong>正向代理</strong>的例子，这个代理服务器隐匿了客户端的请求信息，整合了这些客户端的请求信息后，统一面向服务端。即把多个客户端的请求整合映射到同一个服务器上。具体对于 Google 的服务器来说，它直接面对的是这个搜集所有客户端请求的代理服务器，而不是散落在全球各地的客户端。</p>
+<p>（ 假装有图片 ）</p>
+<p>反向代理，则正好相反。即把单一客户端的请求去映射到不同的服务器上。</p>
+<p>举个具体的例子：楼下有一家外卖餐馆，周围社区的人们可以通过拨打123456这个电话号码订外卖，然后餐馆会送餐上门。凭借着优质的送餐服务和可口的饭菜，这家外卖餐馆的生意红火起来。但随之发生的就是“ 需求大于供应 ”，好多单生意都因为餐馆的产能不足、送餐人手不够而被迫取消。这不仅是利益受损，更大的坏处就是对于自身的口碑也有很大的影响。</p>
+<p>穷则思变，变则通，通则不痛。外卖餐馆老板以前是计算机专业毕业的，于是，他运用反向代理的原理来架构自己的餐饮服务。首先，他拿出之前生意红火时的收益，又在社区的不同地域开了几家连锁店，对外提供标准相同的外卖点餐服务；接下来，他又把之前的<strong>电话点餐渠道</strong>抽离出来，单独作为一个<strong>平台</strong>去处理消费者的点餐需求。当一个消费者打过电话来的时候，这个<strong>电话点餐平台</strong>就会根据消费者的<strong>地理位置</strong>、<strong>社区内几家连锁店的繁忙程度</strong>、<strong>送餐人员的调度</strong>等等这些因素来综合决策，确定由哪家连锁店去完成这个订单。</p>
+<p>于是经过上述的重新组织后，连锁店老板在面对大量的消费者订单时就不会手忙脚乱了，<strong>电话点餐平台</strong>会有条不紊地把这几家连锁店的资源有效整合起来。对于消费者来说，还是之前的123456点餐电话没变，现在甚至比之前的送餐速度还有所增加，毕竟是本着<strong>就近原则</strong>去调度订单的。</p>
+<p>通过上面的例子，我们就会发现，<strong>电话点餐平台</strong>其实就是一个代理服务器，它把一个消费者的订单调度到不同连锁店去完成。在这里，消费者就相当于客户端，连锁店就相当于服务器。这个“反向代理”的意思就体现在把单一客户端的请求去映射到不同的服务器上，和“正向代理”方向相反。</p>
+<p>（ 假装有图片 ）</p>
+<h3 id="http服务器-是什么">HTTP服务器 是什么</h3>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/ios-nei-cun-guan-li-autoreleasepoolyi/">
+                  <h3 class="post-title">
+                    iOS内存管理：autoreleasepool（一）
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

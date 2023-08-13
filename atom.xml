@@ -1,0 +1,1056 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://MJNotMJ.github.io</id>
+    <title>MJNotMJ</title>
+    <updated>2023-08-13T09:54:21.519Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://MJNotMJ.github.io"/>
+    <link rel="self" href="https://MJNotMJ.github.io/atom.xml"/>
+    <subtitle>手可摘星辰</subtitle>
+    <logo>https://MJNotMJ.github.io/images/avatar.png</logo>
+    <icon>https://MJNotMJ.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2023, MJNotMJ</rights>
+    <entry>
+        <title type="html"><![CDATA[Block]]></title>
+        <id>https://MJNotMJ.github.io/post/test/</id>
+        <link href="https://MJNotMJ.github.io/post/test/">
+        </link>
+        <updated>2020-11-05T15:30:07.000Z</updated>
+        <content type="html"><![CDATA[<p>下边三种 block 变量用 cyl_willDeallocWithSelfCallback 方法来进行 dealloc 的监听。实现细节参见 <a href="https://github.com/ChenYilong/CYLDeallocBlockExecutor">CYLDeallocBlockExecutor</a></p>
+<blockquote>
+<p>大概通过 NSObject 的分类，关联了一个实例，重写了这个实例的 dealloc 方法来触发监听。原理就是 NSObject 析构的时候会逐一把关联属性析构。这样既不用 hook dealloc 方法影响性能，也会更加方便处理监听事件。</p>
+</blockquote>
+<pre><code>    // 初始化实例
+    NSObject *obj = [[NSObject alloc] init];
+    NSLog(@&quot;计数---%ld&quot;,CFGetRetainCount((__bridge CFTypeRef)(obj)));
+    
+    // strongBlock
+    void(^strongBlock)(void) = ^{
+        NSLog(@&quot;计数---%ld&quot;,CFGetRetainCount((__bridge CFTypeRef)(obj)));
+    };
+    
+    [strongBlock cyl_willDeallocWithSelfCallback:^(__unsafe_unretained id owner, NSUInteger identifier) {
+        NSLog(@&quot;strongBlock释放了---%@&quot;,owner);
+    }];
+    
+    strongBlock();
+    
+    // weakBlock
+    __weak void(^weakBlock)(void) = ^{
+        NSLog(@&quot;计数---%ld&quot;,CFGetRetainCount((__bridge CFTypeRef)(obj)));
+    };
+    
+    [weakBlock cyl_willDeallocWithSelfCallback:^(__unsafe_unretained id owner, NSUInteger identifier) {
+        NSLog(@&quot;weakBlock释放了---%@&quot;,owner);
+    }];
+    
+    weakBlock();
+    
+    
+    // copyBlock
+    void(^copyBlock)(void) = [weakBlock copy];
+    
+    [copyBlock cyl_willDeallocWithSelfCallback:^(__unsafe_unretained id owner, NSUInteger identifier) {
+        NSLog(@&quot;copyBlock释放了---%@&quot;,owner);
+    }];
+    
+    copyBlock();
+    
+
+</code></pre>
+<p>打印结果：</p>
+<pre><code>计数---1
+计数---3
+计数---4
+计数---5
+copyBlock释放了---&lt;__NSMallocBlock__: 0x60000232b480&gt;
+strongBlock释放了---&lt;__NSMallocBlock__: 0x60000233aca0&gt;
+</code></pre>
+<p>由此看到，当初始化一个 obj 时本身是 strong 修饰，引用计数为1。接下来，默认声明的 strongBlock 在栈上，获取外部变量之后，外部变量引用计数加1，并且 ARC 自动把栈上的 strongBlock copy 到了堆上，这个时候堆上的 strongBlock 其实也捕获了外部变量，使得外部变量引用计数再加1，于是有了3。</p>
+<p>假设作用域到此，栈上的 strongBlock 会被操作系统回收（类似值类型的变量），引用计数减1；指向堆上的指针 strongBlock 也会被回收，堆上的 strongBlock 对象被销毁，引用计数减1；外部变量自身作为局部变量，指向堆上的指针最后被释放，引用计数减1；最终 obj 被释放。</p>
+<p>接下来 weak 修饰的 block 作为栈 block 同样可以捕获外部变量，使其引用计数再加1，这个时候为4；然后手动 copy 一份到堆上得到 copyBlock，同样使引用计数加1，最终得到5。其实这个过程和上述 ARC 自动 copy 的过程类似。</p>
+<p>监听 dealloc 最终触发是在最后整个函数作用域完成。copyBlock 和 strongBlock 最终都成为堆上的一个对象被释放了，而 weakBlock 本事就是栈上的一个值类型，而没有被当成一个对象 copy 到堆上，在栈上被销毁了。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[NSString 内存分析]]></title>
+        <id>https://MJNotMJ.github.io/post/nsstring-nei-cun-fen-xi/</id>
+        <link href="https://MJNotMJ.github.io/post/nsstring-nei-cun-fen-xi/">
+        </link>
+        <updated>2020-11-04T12:45:06.000Z</updated>
+        <content type="html"><![CDATA[<!-- more -->
+<figure data-type="image" tabindex="1"><img src="http://www.mjnotmj.fun/pic/20210412175451.png" alt="" loading="lazy"></figure>
+<h2 id="nsstring-内存">NSString 内存</h2>
+<p>NSString  的 几种类型</p>
+<ol>
+<li>__NSCFConstantString   Constant [ˈkɑːnstənt] 常量，常数</li>
+<li>NSTaggedPointerString</li>
+<li>__NSCFString</li>
+</ol>
+<p>实例代码</p>
+<pre><code>
+    #import &lt;malloc/malloc.h&gt; // 引用头文件
+
+    #define StrLog(_c) NSLog(@&quot;引用计数：%@ -- 堆中实际分配: %zd -- 地址：%p -- 类型：%@&quot;,[_c valueForKey:@&quot;retainCount&quot;], malloc_size((__bridge const void *)(_c)), _c, [_c class]);
+
+    NSString *str1 = @&quot;123456789&quot;; // __NSCFConstantString
+    StrLog(str1);
+    
+    NSString *str2 = @&quot;1234567890&quot;; // __NSCFConstantString
+    StrLog(str2);
+    
+    NSString *str3 = @&quot;12345678901212345678901212345678901212345sasasa&quot;; // __NSCFConstantString
+    StrLog(str3);
+    
+    NSString *str4 = [NSString stringWithFormat:@&quot;123456789&quot;]; // NSTaggedPointerString
+    StrLog(str4);
+    
+    NSString *str5 = [NSString stringWithFormat:@&quot;1234567890&quot;]; // __NSCFString
+    StrLog(str5);
+    
+    NSString *str6 = [NSString stringWithFormat:@&quot;12345678901212345678901212345678901212345sasasa&quot;]; // __NSCFString
+    StrLog(str6);
+
+</code></pre>
+<p>打印结果</p>
+<pre><code> 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b3f3f00 -- 类型：__NSCFConstantString
+ 
+ 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b3f3f60 -- 类型：__NSCFConstantString
+ 
+ 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b3f3f80 -- 类型：__NSCFConstantString
+ 
+ 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x953b7922756a4456 -- 类型：NSTaggedPointerString
+ 
+ 引用计数：2 -- 堆中实际分配: 32 -- 地址：0x600002545880 -- 类型：__NSCFString
+ 
+ 引用计数：2 -- 堆中实际分配: 80 -- 地址：0x600000625ea0 -- 类型：__NSCFString
+
+</code></pre>
+<p>1、引用计数器的值为18446744073709551615,即为2^64-1，当引用计数器的值为-1或者无穷大的时候，说明不满足内存管理法则，既系统并不是通过内存黄金法则来释放的。也就是对str10进行retain,release操作都是没有用的。<br>
+2、str10对象在堆中实际没有分配空间，只有存放在堆区中的对象才满足内存管理法则。<br>
+3、str10对象的地址是低地址，排除代码区和常量区，所以我猜测__NSCFConstantString类型的对象存放在 初始化过的静态区：data段，继续往下走我们会验证这一猜想。</p>
+<figure data-type="image" tabindex="2"><img src="https://tvax3.sinaimg.cn/large/e48133b2ly1g8vbbs00i8j20u80gkq7p.jpg" alt="33217A46-A84E-4454-B11F-6FC47A56597D" loading="lazy"></figure>
+<pre><code>引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x103883f00 -- 类型：__NSCFConstantString
+(lldb) p/x str1
+(__NSCFConstantString *) $0 = 0x0000000103883f00 @&quot;123456789&quot;
+(lldb) p/x str1-&gt;isa
+(Class) $1 = 0x00000001050ed5c0 __NSCFConstantString
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://tvax3.sinaimg.cn/large/e48133b2ly1g8vbgsq43uj21u40rqwxz.jpg" alt="C6F734F7-10FE-45F6-8E72-E6AD514AFF79" loading="lazy"></figure>
+<figure data-type="image" tabindex="4"><img src="https://tvax3.sinaimg.cn/large/e48133b2ly1g8vblpub6yj21ti0r8wyj.jpg" alt="6A020E56-4E9C-4416-9CBA-E8546491D361" loading="lazy"></figure>
+<ul>
+<li>0~8 字节---&gt; C0 D5 0E 05 01 00 00 00 isa指针</li>
+<li>9~16 字节--&gt; C8 07 00 00 00 00 00 00 一脸懵逼  8个字节可能会存放字符串的编码方式，以及对象类型</li>
+<li>17~24 字节-&gt; 53 8A 87 03 01 00 00 00 看起来像个地址</li>
+<li>25~32字节-&gt; 09 00 00 00 00 00 00 00     09</li>
+</ul>
+<p>打印  0x0000000103878a53 的地址</p>
+<figure data-type="image" tabindex="5"><img src="https://tvax4.sinaimg.cn/large/e48133b2ly1g8vbr4gvuoj21ua0t6tum.jpg" alt="C60E3C7C-0CD0-45C4-8F8F-E79E10695AD0" loading="lazy"></figure>
+<p>0x10387110e</p>
+<p>1、__NSCFConstantString类型的对象是特殊对象。其特殊性体现在可以用static修饰，存放在data段，不满足内存管理法则。<br>
+2、所有@&quot;.....&quot;都会在内存中生成__NSCFConstantString类型的对象。<br>
+3、__NSCFConstantString类型的对象在内存中占用32个字节，用来存放isa指针，（编码形式，对象类型），字符串常量的地址以及字符串长度。<br>
+4、字符串的值（字符串常量）存放在文字常量区。</p>
+<pre><code>    NSString *str7 = [[NSString alloc] initWithString:@&quot;222222222222222222222&quot;];
+    StrLog(str7);
+    
+    // Using 'initWithString:' with a literal is redundant
+    
+    NSString *str8 = [NSString stringWithString:@&quot;2222222222222222&quot;];
+    StrLog(str8);
+    
+    // Using 'stringWithString:' with a literal is redundant
+    
+</code></pre>
+<pre><code> 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b12efa0 -- 类型：__NSCFConstantString
+ 引用计数：18446744073709551615 -- 堆中实际分配: 0 -- 地址：0x10b12efc0 -- 类型：__NSCFConstantString
+</code></pre>
+<p>上边也是 静态区</p>
+<p>但是 stringWithFormat 不一样，因为可以拼接 所以 字数少的情况下 放到栈上的      NSTaggedPointerString，字数多的情况下，放到堆上的 __NSCFString</p>
+<h3 id="nsstring-类簇">NSString 类簇</h3>
+<p>继承关系<br>
+__NSCFConstantString -&gt; __NSCFString -&gt; NSMutableString -&gt; NSString -&gt; NSObject</p>
+<p>NSTaggedPointerString -&gt; NSString -&gt; NSObject</p>
+<p><a href="https://xiaozhuanlan.com/topic/1045826397">一个讲TaggedPointer的文章</a></p>
+<p>https://www.jianshu.com/p/a5b6e5838b0a</p>
+<p>https://www.jianshu.com/p/640f173b5583</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[深入浅出计算机组成原理]]></title>
+        <id>https://MJNotMJ.github.io/post/shen-ru-qian-chu-ji-suan-ji-zu-cheng-yuan-li/</id>
+        <link href="https://MJNotMJ.github.io/post/shen-ru-qian-chu-ji-suan-ji-zu-cheng-yuan-li/">
+        </link>
+        <updated>2020-05-08T13:27:44.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="开篇">开篇</h2>
+<figure data-type="image" tabindex="1"><img src="http://www.mjnotmj.fun/pic/15859783996013.jpg" alt="" loading="lazy"></figure>
+<h2 id="冯诺依曼体系结构">冯诺依曼体系结构</h2>
+<p>运算器、控制器、存储器、输入设备和输出设备</p>
+<h2 id="cpu主频">CPU主频</h2>
+<h3 id="进程的运行时间">进程的运行时间</h3>
+<p>对于计算机的性能，我们需要有个标准来衡量。这个标准中主要有两个指标。<br>
+第一个是<strong>响应时间</strong>（Response time）或者叫<strong>执行时间</strong>（Execution time）。想要提升响应时间这个性能指标，你可以理解为让计算机“跑得更快”。<br>
+第二个是<strong>吞吐率</strong>（Throughput）或者<strong>带宽</strong>（Bandwidth），想要提升这个指标，你可以理解为让计算机“搬得更多”。</p>
+<p>我们一般把性能，定义成响应时间的倒数 --- 性能 = 1 / 响应时间</p>
+<p>在<strong>用户态</strong>运行的时间，就是CPU要运行自己进程里指令的时间<br>
+在<strong>内核态</strong>运行的时间，就是CPU要运行自己进程里调用内核指令去服务自身的时间</p>
+<blockquote>
+<p>举一个例子，你去银行取钱，在柜台外需要挂号、签一些单据等自身需要完成的工作，接下来需要银行工作人员在银行系统内部去走你的取钱流程，包括登记信息、去保险柜钞票等（这些工作不可能让一般用户来做，可以理解成内核态）。所以整体来说，你完成一次取钱任务，消耗的总时间就是 “你自己填信息的时间” + “银行工作人员的时间”</p>
+</blockquote>
+<p>但是真正执行完整个进程的时间不一定是 user time + sys time，往往真实客观的时间要大。因为CPU是按时间片进行工作的，当前可能处理着好几个不同的进程，在操作系统的调度下协调完成。</p>
+<blockquote>
+<p>这就好比在银行大厅里，不光是你一个人在取钱，可能有好多人要办理不同的业务。这个时候银行大厅的服务资源是一定的（比如就一台挂号机，柜台工作人员就1位等）。这个时候据需要你排队等待服务了。当你真正完成取钱的工作时，其实要加上排队的时间。</p>
+</blockquote>
+<h3 id="时钟周期">时钟周期</h3>
+<p>在 CPU 内部，和我们平时戴的电子石英表类似，有一个叫晶体振荡器（Oscillator Crystal）的东西，简称为晶振。我们把晶振当成 CPU 内部的电子表来使用。晶振带来的每一次“滴答”，就是时钟周期时间。</p>
+<p>在我这个 2.8GHz 的 CPU 上，这个时钟周期时间，就是 1/2.8G。我们的 CPU，是按照这个“时钟”提示的时间来进行自己的操作。主频越高，意味着这个表走得越快，我们的 CPU 也就“被逼”着走得越快。</p>
+<p>程序的 CPU 执行时间 = 指令数 <strong>×</strong> CPI <strong>×</strong> Clock Cycle Time</p>
+<ol>
+<li>时钟周期时间，就是计算机主频，这个取决于计算机硬件。我们所熟知的摩尔定律就一直在不停地提高我们计算机的主频。比如说，我最早使用的 80386 主频只有 33MHz，现在手头的笔记本电脑就有 2.8GHz，在主频层面，就提升了将近 100 倍</li>
+<li>每条指令的平均时钟周期数 CPI，就是一条指令到底需要多少 CPU Cycle。在后面讲解 CPU 结构的时候，我们会看到，现代的 CPU 通过流水线技术（Pipeline），让一条指令需要的 CPU Cycle 尽可能地少。因此，对于 CPI 的优化，也是计算机组成和体系结构中的重要一环。</li>
+<li>指令数，代表执行我们的程序到底需要多少条指令、用哪些指令。这个很多时候就把挑战交给了编译器。同样的代码，编译成计算机指令时候，就有各种不同的表示方式。</li>
+</ol>
+<h2 id="性能瓶颈">性能瓶颈</h2>
+<p>想要CPU计算得快：1、增加晶体管数量 2、提高主频<br>
+多核CPU：通过并行提高性能</p>
+<h2 id="指令和运算">指令和运算</h2>
+<p>不同CPU使用不同的 <strong>计算机指令集</strong><br>
+常见的指令可以分成五大类</p>
+<ol>
+<li>第一类是<strong>算术类指令</strong>。我们的加减乘除，在 CPU 层面，都会变成一条条算术类指令。</li>
+<li>第二类是<strong>数据传输类指令</strong>。给变量赋值、在内存里读写数据，用的都是数据传输类指令。</li>
+<li>第三类是<strong>逻辑类指令</strong>。逻辑上的与或非，都是这一类指令。</li>
+<li>第四类是<strong>条件分支类指令</strong>。日常我们写的“if/else”，其实都是条件分支类指令。</li>
+<li>最后一类是<strong>无条件跳转指令</strong>。写一些大一点的程序，我们常常需要写一些函数或者方法。在调用函数的时候，其实就是发起了一个无条件跳转指令。</li>
+</ol>
+<h2 id="cpu执行指令">CPU执行指令</h2>
+<h2 id="stack-overflow">Stack Overflow</h2>
+<p>通过引入栈，我们可以看到，无论有多少层的函数调用，或者在函数 A 里调用函数 B，再在函数 B 里调用 A，这样的递归调用，我们都只需要通过维持 <strong>rbp</strong> 和 <strong>rsp</strong>，这两个维护栈顶所在地址的寄存器，就能管理好不同函数之间的跳转。</p>
+<p>对于叶子函数（内部不调用其他函数的函数），可以进行函数内联。编译的时候不进行跳转，pop或者push，直接展开函数。</p>
+<h2 id="编译-链接和装载拆解程序执行">编译、链接和装载：拆解程序执行</h2>
+<figure data-type="image" tabindex="2"><img src="http://www.mjnotmj.fun/pic/15859819659560.jpg" alt="-w424" loading="lazy"></figure>
+<h2 id="文件格式">文件格式</h2>
+<ol>
+<li>首先是.text Section，也叫作<strong>代码段</strong>或者指令段（Code Section），用来保存程序的代码和指令；</li>
+<li>接着是.data Section，也叫作<strong>数据段</strong>（Data Section），用来保存程序里面设置好的初始化数据信息；</li>
+<li>然后就是.rel.text Secion，叫作<strong>重定位表</strong>（Relocation Table）。重定位表里，保留的是当前的文件里面，哪些跳转地址其实是我们不知道的。比如上面的 link_example.o 里面，我们在 main 函数里面调用了 add 和 printf 这两个函数，但是在链接发生之前，我们并不知道该跳转到哪里，这些信息就会存储在重定位表里；</li>
+<li>最后是.symtab Section，叫作<strong>符号表</strong>（Symbol Table）。符号表保留了我们所说的当前文件里面定义的函数名称和对应地址的地址簿。<br>
+<img src="http://www.mjnotmj.fun/pic/15859821179324.jpg" alt="" loading="lazy"></li>
+</ol>
+<p>有个问题 动态库 什么时候去link？？</p>
+<h2 id="虚拟内存">虚拟内存</h2>
+<h3 id="分段">分段</h3>
+<p>这种找出一段连续的物理内存和虚拟内存地址进行映射的方法，我们叫分段（Segmentation）。这里的段，就是指系统分配出来的那个连续的内存空间。<img src="http://www.mjnotmj.fun/pic/15859823242722.png" alt="-w856" loading="lazy"><br>
+会带来问题<br>
+1、内存碎片<br>
+<img src="http://www.mjnotmj.fun/pic/15859823733277.png" alt="-w856" loading="lazy"><br>
+解决方法：先写到硬盘上  内存交换（Memory Swapping）。<br>
+<strong>虚拟内存</strong>、<strong>分段</strong>，再加上<strong>内存交换</strong>，看起来似乎已经解决了计算机同时装载运行很多个程序的问题。不过，你千万不要大意，这三者的组合仍然会遇到一个性能瓶颈。硬盘的访问速度要比内存慢很多，而每一次内存交换，我们都需要把一大段连续的内存数据写到硬盘上。所以，如果内存交换的时候，交换的是一个很占内存空间的程序，这样整个机器都会显得卡顿。</p>
+<h3 id="分页">分页</h3>
+<p>和分段这样分配一整段连续的空间给到程序相比，分页是把整个物理内存空间切成一段段固定尺寸的大小。而对应的程序所需要占用的虚拟内存空间，也会同样切成一段段固定尺寸的大小。这样一个连续并且尺寸固定的内存空间，我们叫页（Page）。从虚拟内存到物理内存的映射，不再是拿整段连续的内存的物理地址，而是按照一个一个页来的。页的尺寸一般远远小于整个程序的大小。在 Linux 下，我们通常只设置成 4KB。<br>
+<img src="http://www.mjnotmj.fun/pic/15859826168776.png" alt="-w856" loading="lazy"><br>
+更进一步地，分页的方式使得我们在加载程序的时候，不再需要一次性都把程序加载到物理内存中。我们完全可以在进行虚拟内存和物理内存的页之间的映射之后，并不真的把页加载到物理内存里，而是只在程序运行中，需要用到对应虚拟内存页里面的指令和数据时，再加载到物理内存里面去。</p>
+<h2 id="动态链接">动态链接</h2>
+<p>编译动态库<br>
+我们要怎么样才能做到，动态共享库编译出来的代码指令，都是地址无关码呢？</p>
+<p>在动态链接对应的共享库，我们在共享库的 data section 里面，保存了一张<strong>全局偏移表</strong>（GOT，Global Offset Table）。虽然共享库的代码部分的物理内存是共享的，但是数据部分是各个动态链接它的应用程序里面各加载一份的。所有需要引用当前共享库外部的地址的指令，都会查询 GOT，来找到当前运行程序的虚拟内存里的对应位置。而 GOT 表里的数据，则是在我们加载一个个共享库的时候写进去的。</p>
+<h2 id="二进制编码-门电路-不用看">二进制编码、门电路 不用看</h2>
+<h2 id="浮点数-定点数">浮点数、定点数</h2>
+<h2 id="处理器">处理器</h2>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[GCD（二）]]></title>
+        <id>https://MJNotMJ.github.io/post/gcder/</id>
+        <link href="https://MJNotMJ.github.io/post/gcder/">
+        </link>
+        <updated>2020-03-04T09:44:15.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="dispatch_barrier_async-和-dispatch_barrier_sync">dispatch_barrier_async 和 dispatch_barrier_sync</h2>
+<pre><code>dispatch_queue_t concurrentQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_CONCURRENT);
+    
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+    
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+
+    dispatch_barrier_async(concurrentQueue, ^{
+        // 追加任务 barrier
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;barrier---%@&quot;,[NSThread currentThread]);// 打印当前线程
+    });
+    
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;3---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+    
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;4---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<p>使用 dispatch_barrier_async ，该函数只能搭配自定义并行队列 dispatch_queue_t 使用。不能使用： dispatch_get_global_queue ，否则 dispatch_barrier_async 的作用会和 dispatch_async 的作用一模一样。</p>
+<p>dispatch_barrier_sync 需要等待栅栏执行完才会执行栅栏后面的任务,而dispatch_barrier_async 无需等待栅栏执行完,会继续往下走(保留在队列里)。也就是说，dispatch_barrier_async 会把任务提交给队列，然后执行下边的代码，不用管任务有没有执行完，而 dispatch_barrier_sync 得等自身栅栏提交给队列的任务完成后，才去走之后的代码，把下边的任务提交给队列。</p>
+<h2 id="dispatch_after">dispatch_after</h2>
+<pre><code>    NSLog(@&quot;currentThread---%@&quot;,[NSThread currentThread]);  // 打印当前线程    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // 2.0 秒后异步追加任务代码到主队列，并开始执行
+        NSLog(@&quot;after---%@&quot;,[NSThread currentThread]);  // 打印当前线程
+    });
+</code></pre>
+<p>dispatch_after 方法并不是在指定时间之后才开始执行处理，而是在指定时间之后<strong>将任务追加</strong>到<strong>主队列</strong>中。严格来说，这个时间并不是绝对准确的，但想要大致延迟执行任务，dispatch_after 方法是很有效的。</p>
+<h2 id="dispatch_once">dispatch_once</h2>
+<pre><code>    static dispatch_once_t onceToken;
+    dispatch_once(&amp;onceToken, ^{
+        // 只执行 1 次的代码（这里面默认是线程安全的）
+    });
+</code></pre>
+<h2 id="dispatch_semaphore">dispatch_semaphore</h2>
+<pre><code>// 创建信号量，value:初始信号量数 如果小于0则会返回NULL
+dispatch_semaphore_create(long value); 
+
+// 发送信号量是的信号量+1
+dispatch_semaphore_signal(dispatch_semaphore_t deem);
+
+//当信号量为0时候，会阻塞当前线程 参数（信号量，等待时间）
+dispatch_semaphore_wait(dispatch_semaphore_t dsema, dispatch_time_t timeout); 
+</code></pre>
+<p>dispatch_semaphore_signal 会对信号量 +1<br>
+dispatch_semaphore_wait 会判断当前信号量大于1，</p>
+<pre><code>//信号量初始化必须大于等于0， 因为dispatch_semaphore_wait 执行的是-1操作。
+dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+//创建异步队列
+dispatch_queue_t queue = dispatch_get_global_queue(0, 0);
+dispatch_async(queue, ^{
+        
+    sleep(1);
+    NSLog(@&quot;执行任务: A&quot;);
+    //让信号量+1
+    dispatch_semaphore_signal(semaphore);
+});
+
+// If the resulting value is less than zero,this function waits for a signal to occur before returning.如果结果值小于零，
+这个函数在返回之前等待一个信号。
+
+// 也就是说，dispatch_semaphore_wait 先减1，如果发现返回值小于0，那就等待。如果计算完成后，发现返回值等于0或者大于0，继续执行。先计算后判断。
+dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+dispatch_async(queue, ^{
+        
+    sleep(1);
+    NSLog(@&quot;执行任务: B&quot;);
+    //让信号量+1（相当于解锁）
+    dispatch_semaphore_signal(semaphore);
+});
+
+//当当前的信号量值为0时候会阻塞线，如果大于0的话，信号量-1，不阻塞线程
+dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+dispatch_async(queue, ^{
+    
+    sleep(1);
+    NSLog(@&quot;执行任务: C&quot;);
+    dispatch_semaphore_signal(semaphore);
+});
+
+</code></pre>
+<h2 id="dispatch_group">dispatch_group</h2>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[GCD（一）]]></title>
+        <id>https://MJNotMJ.github.io/post/gcdyi/</id>
+        <link href="https://MJNotMJ.github.io/post/gcdyi/">
+        </link>
+        <updated>2020-03-04T09:43:47.000Z</updated>
+        <content type="html"><![CDATA[<p>线程（环境）<br>
+队列（任务派发的机制）串行队列、并发队列<br>
+任务（要执行的操作）同步任务（等待队列前边没有任务派发，在当前线程）、异步任务（马上执行，可以接受在其他线程执行，要看任务派发机制的安排）</p>
+<h2 id="任务无嵌套">任务无嵌套</h2>
+<h5 id="新建串行队列-主线程调用-同步任务">（新建）串行队列 +（主线程调用） 同步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_sync(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;_NSMainThread: 0x6000032c8440&gt;{number = 1, name = main}
+</code></pre>
+<p>没有开启新线程，串行执行任务</p>
+<h5 id="新建串行队列-主线程调用-异步任务">（新建）串行队列 +（主线程调用） 异步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_async(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;NSThread: 0x600003447140&gt;{number = 2, name = (null)}
+</code></pre>
+<p>有开启新线程（1条），串行执行任务</p>
+<h5 id="主队列-主线程调用-同步任务">主队列 +（主线程调用） 同步任务</h5>
+<pre><code>    dispatch_queue_t mainQueue = dispatch_get_main_queue();
+    dispatch_sync(mainQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+EXC_BAD_INSTRUCTION
+</code></pre>
+<p>崩溃，主队列中追加的同步任务 和 主线程本身的任务 两者之间相互等待死锁</p>
+<h5 id="主队列-主线程调用-异步任务">主队列 +（主线程调用） 异步任务</h5>
+<pre><code>    dispatch_queue_t mainQueue = dispatch_get_main_queue();
+    dispatch_async(mainQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;_NSMainThread: 0x600002c78700&gt;{number = 1, name = main}
+</code></pre>
+<p>没有开启新线程，串行执行任务</p>
+<h5 id="新建并发队列-主线程调用-同步任务">（新建）并发队列 +（主线程调用） 同步任务</h5>
+<pre><code>    dispatch_queue_t concurrentQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_CONCURRENT);
+    dispatch_sync(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;_NSMainThread: 0x6000019b0440&gt;{number = 1, name = main}
+</code></pre>
+<p>没有开启新线程，串行执行任务</p>
+<h5 id="新建并发队列-主线程调用-异步任务">（新建）并发队列 +（主线程调用） 异步任务</h5>
+<pre><code>    dispatch_queue_t concurrentQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_CONCURRENT);
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<pre><code>// 打印结果
+---&lt;NSThread: 0x600003283b40&gt;{number = 3, name = (null)}
+</code></pre>
+<p>开启新线程，并发执行任务</p>
+<h5 id="新建并发队列-子线程调用-异步任务">（新建）并发队列 +（子线程调用） 异步任务</h5>
+<pre><code>    dispatch_queue_t concurrentQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_CONCURRENT);
+
+    NSThread *newThread = [[NSThread alloc] initWithBlock:^{
+        NSLog(@&quot;创建新线程_%@&quot;, [NSThread currentThread]);
+
+        dispatch_async(concurrentQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+        dispatch_async(concurrentQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+        dispatch_async(concurrentQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;3---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+
+
+    }];
+    [newThread start];
+</code></pre>
+<pre><code>// 打印结果
+创建新线程_&lt;NSThread: 0x600002504c00&gt;{number = 7, name = (null)}
+1---&lt;NSThread: 0x600002519000&gt;{number = 5, name = (null)}
+2---&lt;NSThread: 0x600002501bc0&gt;{number = 6, name = (null)}
+3---&lt;NSThread: 0x600002518280&gt;{number = 2, name = (null)}
+</code></pre>
+<p>有开启新线程(多个)，并发执行任务</p>
+<h4 id="总结表格">总结表格</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">串行队列</th>
+<th style="text-align:center">主队列</th>
+<th style="text-align:center">并发队列</th>
+<th style="text-align:center">全局并发队列</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">同步（sync）主线程</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">死锁卡住不执行</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">异步（async）主线程</td>
+<td style="text-align:center">有开启新线程（1条），串行执行任务</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">有开启新线程(多个)，并发执行任务</td>
+<td style="text-align:center">有开启新线程(多个)，并发执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">同步（sync）子线程</td>
+<td style="text-align:center">没有开启新线程，还在当前子线程，串行执行任务</td>
+<td style="text-align:center">回到主线程，串行执行任务</td>
+<td style="text-align:center">没有开启新线程，还在当前子线程，串行执行任务</td>
+<td style="text-align:center">没有开启新线程，还在当前子线程，串行执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">异步（async）子线程</td>
+<td style="text-align:center">有开启新线程（1条），不在当前子线程，串行执行任务</td>
+<td style="text-align:center">回到主线程，串行执行任务</td>
+<td style="text-align:center">有开启新线程(多个)，并发执行任务</td>
+<td style="text-align:center">有开启新线程(多个)，并发执行任务</td>
+</tr>
+</tbody>
+</table>
+<h2 id="任务有嵌套">任务有嵌套</h2>
+<h5 id="新建串行队列-主线程调用-同步任务-嵌套-同步任务">（新建）串行队列 +（主线程调用） 同步任务 + 嵌套 同步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_sync(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_sync(serialQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+    });
+</code></pre>
+<pre><code>// 打印结果
+1---&lt;_NSMainThread: 0x600002a40300&gt;{number = 1, name = main}
+</code></pre>
+<p>崩溃，serialQueue 已经有了同步任务，还要追加同步任务</p>
+<h5 id="新建串行队列-主线程调用-同步任务-嵌套-异步任务">（新建）串行队列 +（主线程调用） 同步任务 + 嵌套 异步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_sync(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_async(serialQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+    });
+</code></pre>
+<pre><code>// 打印结果
+1---&lt;_NSMainThread: 0x600002a40300&gt;{number = 1, name = main}
+2---&lt;NSThread: 0x600000cd7bc0&gt;{number = 6, name = (null)}
+</code></pre>
+<p>开启新线程，串行执行任务</p>
+<h5 id="新建串行队列-主线程调用-异步任务-嵌套-同步任务">（新建）串行队列 +（主线程调用） 异步任务 + 嵌套 同步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_async(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_sync(serialQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+    });
+</code></pre>
+<pre><code>// 打印结果
+1---&lt;NSThread: 0x60000196b900&gt;{number = 6, name = (null)}
+</code></pre>
+<p>崩溃，开启了新线程，却要再追加同步任务，因为当前的异步任务还没执行完</p>
+<h5 id="新建串行队列-主线程调用-异步任务-嵌套-异步任务">（新建）串行队列 +（主线程调用） 异步任务 + 嵌套 异步任务</h5>
+<pre><code>    dispatch_queue_t serialQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_SERIAL);
+    dispatch_async(serialQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        
+        dispatch_async(serialQueue, ^{
+            [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+            NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+        });
+        
+    });
+</code></pre>
+<pre><code>// 打印结果
+1---&lt;NSThread: 0x600002ff0640&gt;{number = 4, name = (null)}
+2---&lt;NSThread: 0x600002ff0640&gt;{number = 4, name = (null)}
+</code></pre>
+<p>开启了新线程，串行执行任务</p>
+<h4 id="总结表格-串行队列">总结表格 串行队列</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">嵌套 同步（sync）</th>
+<th style="text-align:center">嵌套 异步（async）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">同步（sync）</td>
+<td style="text-align:center">崩溃</td>
+<td style="text-align:center">开启新线程（1 条），串行执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">异步（async）</td>
+<td style="text-align:center">崩溃</td>
+<td style="text-align:center">开启新线程（1 条），串行执行任务</td>
+</tr>
+</tbody>
+</table>
+<h4 id="总结表格-并发队列">总结表格 并发队列</h4>
+<table>
+<thead>
+<tr>
+<th style="text-align:center"></th>
+<th style="text-align:center">嵌套 同步（sync）</th>
+<th style="text-align:center">嵌套 异步（async）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">同步（sync）</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">有开启新线程，并发执行任务</td>
+</tr>
+<tr>
+<td style="text-align:center">异步（async）</td>
+<td style="text-align:center">没有开启新线程，串行执行任务</td>
+<td style="text-align:center">有开启新线程，并发执行任务</td>
+</tr>
+</tbody>
+</table>
+<h2 id="结论">结论</h2>
+<p>形象理解：<br>
+有 5 个人要穿过一道门禁，这道门禁总共有 10 个入口，管理员可以决定同一时间打开几个入口，可以决定同一时间让一个人单独通过还是多个人一起通过。不过默认情况下，管理员只开启一个入口，且一个通道一次只能通过一个人。<br>
+<strong>人好比是 任务，管理员好比是 系统，入口则代表 线程。</strong><br>
+5 个人表示有 5 个任务，10 个入口代表 10 条线程。<br>
+串行队列 好比是 5 个人排成一支长队。<br>
+并发队列 好比是 5 个人排成多支队伍，比如 2 队，或者 3 队。<br>
+同步任务 好比是管理员只开启了一个入口（当前线程）。<br>
+异步任务 好比是管理员同时开启了多个入口（当前线程 + 新开的线程）。</p>
+<p>同步任务就是认准当前线程，异步任务看情况</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[数字签名 && 认证 ]]></title>
+        <id>https://MJNotMJ.github.io/post/shu-zi-qian-ming-and-ren-zheng/</id>
+        <link href="https://MJNotMJ.github.io/post/shu-zi-qian-ming-and-ren-zheng/">
+        </link>
+        <updated>2019-11-14T04:01:32.000Z</updated>
+        <content type="html"><![CDATA[<h4 id="消息认证码">消息认证码</h4>
+<p>利用对称加密，对消息的完整性进行保护和身份认证。</p>
+<figure data-type="image" tabindex="1"><img src="https://tva3.sinaimg.cn/large/e48133b2ly1g8xerjd9mfj21ac0wajvk.jpg" alt="消息验证码" loading="lazy"></figure>
+<p>消息认证码可以实现简单的身份认证，其安全问题主要在于需要事先共享秘钥（可能发生秘钥泄露），并且当多方共享秘钥时，无法追踪消息的真实来源。</p>
+<h4 id="数字签名">数字签名</h4>
+<p>数字签名使用<strong>非对称加密</strong>，保护数据的完整性和追踪消息的来源。</p>
+<figure data-type="image" tabindex="2"><img src="https://tva1.sinaimg.cn/large/e48133b2ly1g8xf5pcexrj21gu0xu78q.jpg" alt="数字签名" loading="lazy"></figure>
+<h5 id="认证ca">认证（CA）</h5>
+<p>当接收方的本地的发送方的公钥被调换时，接收方就不能收到真正发送方的消息，它一直能校验确认的却是“攻击方”的消息。所以，需要一个权威性的公钥分发平台（certificate authority 简称 <strong>CA</strong>），来保证获取的公钥就是发送方的公钥。</p>
+<figure data-type="image" tabindex="3"><img src="https://tvax4.sinaimg.cn/large/e48133b2ly1g8xfjnvuiuj21s80w244a.jpg" alt="CA认证机构" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[iOS 事件传递 && 响应者链条]]></title>
+        <id>https://MJNotMJ.github.io/post/ios-shi-jian-chuan-di-and-xiang-ying-zhe-lian-tiao/</id>
+        <link href="https://MJNotMJ.github.io/post/ios-shi-jian-chuan-di-and-xiang-ying-zhe-lian-tiao/">
+        </link>
+        <updated>2019-11-13T09:18:22.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="ios-事件传递-响应者链条">iOS 事件传递 &amp;&amp; 响应者链条</h3>
+<figure data-type="image" tabindex="1"><img src="https://tva2.sinaimg.cn/large/e48133b2ly1g8winnwhv6j20or0w2h4g.jpg" alt="UIResponder" loading="lazy"></figure>
+<p>UIResponder 处理三种事件</p>
+<pre><code>// 触摸事件
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event;
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event;
+
+// 加速计事件
+- (void)motionBegan:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+- (void)motionEnded:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+- (void)motionCancelled:(UIEventSubtype)motion withEvent:(UIEvent *)event;
+
+// 远程控制事件
+- (void)remoteControlReceivedWithEvent:(UIEvent *)event;
+
+</code></pre>
+<h3 id="uitouch">UITouch</h3>
+<p>UITouch的作用就是它会保存着这个手指相关的一些信息，触摸时间，位置，阶段等之类的信息。<br>
+当手指移动时，系统会更新同一个UITouch对象，使之能够一直保存该手指在的触摸位置<br>
+当手指头离开屏幕的时候，那么与之对应的UITouch对象就会销毁了。</p>
+<h3 id="事件的传递">事件的传递</h3>
+<p>当用户的手指触摸屏幕的某一个view的时候，此时就发生了触摸事件，系统会把该事件加入UIApplication管理的事件队列中去。通常，先发送事件给应用程序的主窗口（keyWindow），主窗口会在视图层次结构上面找到一个<strong>最合适</strong>的视图来处理触摸事件</p>
+<p>触摸事件的传递是由父控件传递到子控件的</p>
+<p>如果父控件不能接受触摸事件，那么子控件就不可能接受触摸事件</p>
+<ul>
+<li>不允许与用户交互userInteractionEnabled = NO</li>
+<li>这个控件隐藏了hidden = YES</li>
+<li>透明度太小了alpha = 0.0 ~ 0.01</li>
+</ul>
+<ol>
+<li>首先它会判断它自己是否能接受触摸事件，如果它不能接收触摸事件，那么它肯定不是最合适的，</li>
+<li>然后再判断用户手指的触摸点是否在它自己的身上，如果不在，那么他就不是最合适的</li>
+<li>执行完上面两个操作，然后从后往前遍历子控件（意思是先遍历后加入的子控件），然后重复上面的两个步骤</li>
+<li>如果没有找到复合条件的子控件，那么它自己就是最适合处理事件的控件</li>
+</ol>
+<pre><code>- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event // 来查找最合适处理事件的方法
+
+- (BOOL)pointInside:(CGPoint)point withEvent:(nullable UIEvent *)event // 来判断触摸点是否在其身上
+
+
+</code></pre>
+<h3 id="响应者链条事件的处理">响应者链条（事件的处理）</h3>
+<p>当用户点击屏幕后产生一个触摸事件，经过经过一系列的传递过程后，会找到最合适的视图控件来处理这个事件，找到最合适的视图之后，就会调用空间的touches那三个方法，这些方法的默认做法是把事件顺着响应者链条向上传递，将事件传递给上一个响应者进行处理</p>
+<figure data-type="image" tabindex="2"><img src="https://tvax1.sinaimg.cn/large/e48133b2ly1g8wj675izxj20xc0j7q7w.jpg" alt="响应者链条" loading="lazy"></figure>
+<p>首先initial view会把事件传递给橘黄色的view，橘黄色view又把事件给时间传递给了蓝绿色view，蓝绿色view把时间传递给了控制器view，控制器view把事件传递给了窗口，窗口把事件传递给了Application对象。</p>
+<h4 id="事件传递的完整过程">事件传递的完整过程</h4>
+<p>先将事件对象由上往下传递(由父控件传递给子控件)，找到最合适的控件来处理这个事件，调用最合适控件的touches….方法，如果调用了[super touches….]那么就会将事件顺着响应者链条往上传递，传递给上一个响应者，接着就会调用上一个响应者的touches….方法</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[UIWindow]]></title>
+        <id>https://MJNotMJ.github.io/post/uiwindow/</id>
+        <link href="https://MJNotMJ.github.io/post/uiwindow/">
+        </link>
+        <updated>2019-11-13T08:00:19.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="uiwindow">UIWindow</h1>
+<p>UIWindow 是 UIView 的子类</p>
+<p>Applicatin -&gt; UIWindow -&gt; subView 分配到真正响应此事件的子视图</p>
+<p>先创建UIWindow,再创建控制器，创建控制器的view，然后将控制器的view添加到 UIWindow 上。</p>
+<pre><code>typedef CGFloat UIWindowLevel;
+
+UIWindowLevelNormal // 0.0
+
+UIWindowLevelStatusBar // 1000.0
+
+UIWindowLevelAlert // 2000.0
+
+</code></pre>
+<ol>
+<li>UIWindowLevel 的值不仅仅只有 UIWindowLevelNormal 、 UIWindowLevelAlert、 UIWindowLevelStatusBar 这三个，可以是自定义的随意值,哪怕是负数</li>
+<li>UIWindow 的显示的确可以通过 UIWindowLevel 来区分优先级，所有的window都会被加在界面上，只不过会通过优先级罗列起来，UIWindowLevel 大的在上面显示，UIWindowLevel 小的在下面显示。</li>
+<li>UIWindowLevel 优先级相等的情况下，看谁后实例化了，谁后实例化谁先显示<br>
+如果将当前 KeyWindow对象设置为 nil 则该对象会从 Windows数组中移除,并且最后实例化的Window对象将成为 KeyWindow ,但是依然遵循总结2中的描述,UIWindowLevel 大的在上面显示，UIWindowLevel 小的在下面显示。</li>
+</ol>
+<pre><code>makeKeyWindow // 让当前 window 成为 keyWindow
+
+makeKeyAndVisible // 让当前 window 成为 keyWindow,并且显示出来，并且把这个窗口放在同一级别 或者 更低级别 的 window 前面
+
+[UIApplication sharedApplication].windows // 获取当前应用所有的 window
+
+[UIApplication sharedApplication].keyWindow // 获取当前应用的 keyWindow
+
+view.window // 获取某个 View 所在的 window
+
+becomeKeyWindow // 不要主动调用，用于子类去覆盖这个方法来实现当成为 keyWindow 时的行为
+
+resignKeyWindow // 不要主动调用, 用于子类去覆盖这个方法来实现当不再是 keyWindow 时当前 window 的行为
+
+</code></pre>
+<h4 id="keywindow">keyWindow</h4>
+<p>The value of this property is YES when the window is the key window or NO when it is not. The key window receives keyboard and other non-touch related events. Only one window at a time may be the key window.</p>
+<h4 id="通知">通知</h4>
+<pre><code>UIWindowDidBecomeVisibleNotification
+
+UIWindowDidBecomeHiddenNotification
+
+UIWindowDidBecomeKeyNotification
+
+UIWindowDidResignKeyNotification
+
+</code></pre>
+<h4 id="获取-window">获取 window</h4>
+<pre><code>UIWindow *window = self.view.window;
+
+UIWindow *window = [UIApplication sharedApplication].keyWindow;
+
+UIWindow *window = [[[UIApplication sharedApplication] delegate] window];
+
+UIWindow *window = [[[UIApplication sharedApplication] windows] lastObject]; // 当前顶层窗口
+
+
+</code></pre>
+<h4 id="键盘-window">键盘 window</h4>
+<p>成为 第一响应者的时候，控件所在的 window ，不一定是 keyWindow。</p>
+<p>键盘弹出后</p>
+<ul>
+<li>UIWindow</li>
+<li>UITextEffectsWindow</li>
+<li>UIRemoteKeyboardWindow</li>
+</ul>
+<h5 id="收起键盘的方法">收起键盘的方法</h5>
+<pre><code>[self.textField resignFirstResponder];
+
+[self.view endEditing:YES];
+
+[[UIApplication sharedApplication]sendAction:@selector(resignFirstResponder) to:nil from:nil forEvent:nil];
+
+[[[UIApplication sharedApplication] keyWindow] endEditing:YES];
+
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[MJRefresh 源码分析< 1 >]]></title>
+        <id>https://MJNotMJ.github.io/post/mjrefresh-yuan-ma-fen-xi-less-1-greater/</id>
+        <link href="https://MJNotMJ.github.io/post/mjrefresh-yuan-ma-fen-xi-less-1-greater/">
+        </link>
+        <updated>2019-06-09T08:58:53.000Z</updated>
+        <summary type="html"><![CDATA[<p>第1回，先粗略分析一波 Header 的实现原理</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>第1回，先粗略分析一波 Header 的实现原理</p>
+<!-- more -->
+<h2 id="懒加载">懒加载</h2>
+<p>重写属性的 get 方法</p>
+<pre><code>- (NSArray *)examples {
+    if (!_examples) {
+        // _examples 的相关初始化动作
+    }
+    return _examples;
+}
+
+</code></pre>
+<p>static 静态的，在堆栈的全局数据区，只声明一次，每次访问内存地址不变，且程序初始化的时候默认值是0。但是如果以局部的方式声明，除非显式的声明为0，那这个静态变量的值是随机的。（为什么？？？）</p>
+<p>const 常量。一经初始化就不能被改变。那我怎么知道我被初始化了？比如，默认是 0，那我咋知道这个默认值能不能改变。</p>
+<pre><code>static const char MJRefreshHeaderKey = '\0';
+
+</code></pre>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" checked="" disabled="" type="checkbox" id="task-item-7214352"><label class="task-list-item-label" for="task-item-7214352"> 学会用 MarkDown 语法画思维导图</label></li>
+</ul>
+<pre><code>graph TD
+A0[MJRefreshNormalHeader]
+A0--&gt;B0[MJRefreshStateHeader]
+B0--&gt;C0[MJRefreshHeader]
+C0--&gt;D0[MJRefreshComponent]
+D0--&gt;E0[UIView]
+
+A1[MJRefreshBackNormalFooter]
+A1--&gt;B1[MJRefreshBackStateFooter]
+B1--&gt;C1[MJRefreshBackFooter]
+C1--&gt;D1[MJRefreshFooter]
+D1--&gt;D0
+</code></pre>
+<pre><code>NSString *const MJRefreshHeaderLastUpdatedTimeKey = @&quot;MJRefreshHeaderLastUpdatedTimeKey&quot;;
+
+</code></pre>
+<p>getter=isRefreshing 是个什么玩意儿？？</p>
+<pre><code>/** 是否正在刷新 */
+@property (assign, nonatomic, readonly, getter=isRefreshing) BOOL refreshing;
+
+</code></pre>
+<p>NS_REQUIRES_SUPER</p>
+<p>ns_requires_super</p>
+<p>子类覆盖了该方法但是没有调用 super，就会有警告</p>
+<h2 id="mjrefreshcomponent">MJRefreshComponent</h2>
+<h3 id="基类的作用">基类的作用</h3>
+<ul>
+<li>声明控件的刷新状态</li>
+<li>声明几种刷新状态的回调 Block</li>
+<li>声明刷新流程中的几个方法</li>
+<li>交给子类去实现的方法</li>
+</ul>
+<h3 id="m-文件的实现方式">.m 文件的实现方式</h3>
+<p>持有一个 UIPanGestureRecognizer 手势识别</p>
+<p>弱持有了 scrollView ，这个 父View</p>
+<p>监听了：<br>
+scrollView 的 contentOffset</p>
+<p>scrollView 的 contentSize</p>
+<p>panGestureRecognizer 的 UIGestureRecognizerState state(基类里的属性);</p>
+<pre><code>[被监听者 addObserver:监听者 forKeyPath:被监听者的某个属性 options:监听策略 context:附属信息];
+</code></pre>
+<p>在监听的触发方法里 把监听结果回调出去，给子类去实现相应的结果的处理。</p>
+<ul>
+<li>scrollViewContentOffsetDidChange</li>
+<li>scrollViewContentSizeDidChange</li>
+<li>scrollViewPanStateDidChange</li>
+</ul>
+<p>在 这个 UIView 方法 willMoveToSuperview 里添加了监听。有点像 View 的生命周期方法。</p>
+<p>MJRefreshDispatchAsyncOnMainQueue 采用这种 宏 的形式，把一些方法或者代码块放到主线程主队列里去等待实现。</p>
+<h2 id="mjrefreshheader">MJRefreshHeader</h2>
+<p>继承了 MJRefreshComponent，实现父类留有的接口</p>
+<h3 id="都干了啥">都干了啥？</h3>
+<ul>
+<li>布局，调整UI</li>
+<li>统的 NSUserDefaults 记录了刷新的时间</li>
+<li>监听的数据 处理 本样式的刷新流程的逻辑，并且设置本样式的 states</li>
+</ul>
+<h3 id="m-文件的实现方式-2">.m 文件的实现方式</h3>
+<p>父类监听的 scrollView 的变化扔出来给 Header 子类去处理</p>
+<ul>
+<li>(void)setState:(MJRefreshState)state;</li>
+</ul>
+<h2 id="mjrefreshstateheader">MJRefreshStateHeader</h2>
+<h3 id="都干了啥-2">都干了啥？</h3>
+<ul>
+<li>相当于耦合了一些业务层面的东西，时间的设置与赋值在这里</li>
+<li>不同状态下UI的展示</li>
+</ul>
+<p>一段比较诡异的代码，get 方法取了值，然后去 set,就是因为get是取的父类的实现的值，set时子类（自身）重新实现了一下 set方法。</p>
+<pre><code>// 重新设置key（重新显示时间）
+    self.lastUpdatedTimeKey = self.lastUpdatedTimeKey;
+
+</code></pre>
+<h2 id="mjrefreshnormalheader">MJRefreshNormalHeader</h2>
+<h3 id="都干了啥-3">都干了啥？</h3>
+<ul>
+<li>UI 组件的设置，区别于 GIF 图的Header</li>
+<li>一层层实现 prepare placeSubviews setState 等父类的方法来达到逻辑闭环且一层层扩展的目的</li>
+</ul>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[iOS 排序算法]]></title>
+        <id>https://MJNotMJ.github.io/post/ios-pai-xu-suan-fa/</id>
+        <link href="https://MJNotMJ.github.io/post/ios-pai-xu-suan-fa/">
+        </link>
+        <updated>2019-05-26T07:42:53.000Z</updated>
+        <summary type="html"><![CDATA[<p>插入排序、希尔排序、冒泡排序</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>插入排序、希尔排序、冒泡排序</p>
+<!-- more -->
+<h1 id="ios-排序算法">iOS 排序算法</h1>
+<h2 id="插入排序">插入排序</h2>
+<pre><code class="language--">- (void)logInsertionSortingArray {
+  // 初始化一个随机数组
+    NSMutableArray * arr = @[@16,@1,@2,@9,@7,@12,@5,@3,@8,@13,@10].mutableCopy;
+    // 开始遍历
+    // arr[0] 第一个没有必要去排序
+    // arr[0-1] 组成两个及两个以上时才有排序的必要性
+
+    // n 为数组中元素个数
+    // 第1次遍历 用 arr[1] 来插入到 arr[0]          序表中（序表插入之前：1个元素 之后：2个元素）
+    // 第2次遍历 用 arr[2] 来插入到 arr[0] ~ arr[1] 序表中（序表插入之前：2个元素 之后：3个元素）
+    // 第3次遍历 用 arr[3] 来插入到 arr[0] ~ arr[2] 序表中（序表插入之前：3个元素 之后：4个元素）
+    // 第4次遍历 用 arr[4] 来插入到 arr[0] ~ arr[3] 序表中（序表插入之前：4个元素 之后：5个元素）
+    //
+    // ·······························
+    //
+    // 第n-1次遍历 用 arr[n-1] 来插入到 arr[0] ~ arr[n-2] 序表中（序表插入之前：n-1个元素 之后：n个元素） 
+       
+    for (int i = 1; i &lt; arr.count; i++) {
+        // 创建 另一个用于移动插入元素的计数器
+        int j = i;  
+        // 创建 当前要插入的元素 的记录空间
+        id temp;  
+        // 如果后一个元素小于前一个元素
+        if (arr[i] &lt; arr[i-1]) { 
+            // 记录当前元素
+            temp = arr[i];
+            // 开始通过条件判断一个一个向前移动被插入的元素
+            while (j &gt; 0 &amp;&amp; [temp intValue] &lt; [arr[j-1] intValue]) {
+                arr[j] = arr[j-1];
+                j--;
+            }
+            // 还原值 插入成功
+            arr[j] = temp;
+        }
+    }
+}
+</code></pre>
+<h2 id="希尔排序">希尔排序</h2>
+<pre><code class="language--">-(void)shellSort:(NSMutableArray *)list{
+// 初始化一个随机数组
+    NSMutableArray *arr = @[@16,@1,@2,@9,@7,@12,@5,@3,@8,@13,@10].mutableCopy;
+    // 用 数组元素个数的一半作为增量
+    // gap 意味着 被分为几组  也意味着步长 
+    // 当数组元素为奇数时 按步长算 第一组肯定多了一个元素
+    int gap = (int)arr.count / 2;
+    
+    // 开始递归 直到增量为 1
+    while (gap &gt;= 1) {
+    
+        for( int i = gap ; i &lt; [arr count]; i++ ){
+            NSInteger temp = [[arr objectAtIndex:i] intValue];
+            
+            int j = i;
+            while (j &gt;= gap &amp;&amp; temp &lt; [[list objectAtIndex:(j - gap)] intValue]) {
+                [list replaceObjectAtIndex:j withObject:[list objectAtIndex:j-gap]];
+                j -= gap; // j = j - gap;
+            }
+            [list replaceObjectAtIndex:j withObject:[NSNumber numberWithInteger:temp]];
+        }
+        gap = gap / 2;
+    }
+}
+</code></pre>
+<h2 id="冒泡排序">冒泡排序</h2>
+<pre><code class="language--">- (void)logArrayFunction {
+    // 初始化一个 等待排序的 数组
+    NSMutableArray * arr = @[@16,@1,@2,@9,@7,@12,@5,@3,@8,@13,@10].mutableCopy;
+    
+    // 定义一个暂停标识符
+    int flag;
+    for( int i = 0，flag = 0; i &lt; arr.count - 1; i++ ) {
+        // 开始内层循环
+        for(int j = arr.count - 1; j &gt;= 1 + i; j-- ) {
+        
+            if(arr[j] &gt; arr[j - 1]) 
+            {
+                //交换下元素
+                Swap(arr[j],arr[j + 1]);
+                //表示元素交换过
+                flag = 1; 
+            }
+        }
+        
+        // 说明元素有序了
+        if(flag == 0) {
+           break;    //直接跳出循环，没有必要进行后续的for循环了
+        }
+   
+    }
+    
+}
+</code></pre>
+<h2 id="快速排序">快速排序</h2>
+<pre><code class="language--">- (void)quickSortArray:(NSMutableArray *)array withLeftIndex:(NSInteger)leftIndex andRightIndex:(NSInteger)rightIndex
+{
+    if (leftIndex &gt;= rightIndex) {//如果数组长度为0或1时返回
+        return ;
+    }
+    
+    NSInteger i = leftIndex;
+    NSInteger j = rightIndex;
+    //记录比较基准数
+    NSInteger key = [array[i] integerValue];
+    
+    while (i &lt; j) {
+        /**** 首先从右边j开始查找比基准数小的值 ***/
+        while (i &lt; j &amp;&amp; [array[j] integerValue] &gt;= key) {//如果比基准数大，继续查找
+            j--;
+        }
+        //如果比基准数小，则将查找到的小值调换到i的位置
+        array[i] = array[j];
+        
+        /**** 当在右边查找到一个比基准数小的值时，就从i开始往后找比基准数大的值 ***/
+        while (i &lt; j &amp;&amp; [array[i] integerValue] &lt;= key) {//如果比基准数小，继续查找
+            i++;
+        }
+        //如果比基准数大，则将查找到的大值调换到j的位置
+        array[j] = array[i];
+        
+    }
+    
+    //将基准数放到正确位置
+    array[i] = @(key);
+    
+    /**** 递归排序 ***/
+    //排序基准数左边的
+    [self quickSortArray:array withLeftIndex:leftIndex andRightIndex:i - 1];
+    //排序基准数右边的
+    [self quickSortArray:array withLeftIndex:i + 1 andRightIndex:rightIndex];
+}
+
+    NSMutableArray * arr = @[@16,@1,@2,@9,@7,@12,@5,@3,@8,@13,@10].mutableCopy;
+    [self quickSortArray:arr withLeftIndex:0 andRightIndex:arr.count-1];
+    
+</code></pre>
+]]></content>
+    </entry>
+</feed>

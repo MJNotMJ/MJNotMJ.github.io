@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>MJRefresh 源码分析&lt; 1 &gt; | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">MJRefresh 源码分析&lt; 1 &gt;</h2>
+            <div class="post-date">2019-06-09</div>
+            
+              <div class="feature-container" style="background-image: url('https://MJNotMJ.github.io/post-images/mjrefresh-yuan-ma-fen-xi-less-1-greater.png')">
+              </div>
+            
+            <div class="post-content">
+              <p>第1回，先粗略分析一波 Header 的实现原理</p>
+<!-- more -->
+<h2 id="懒加载">懒加载</h2>
+<p>重写属性的 get 方法</p>
+<pre><code>- (NSArray *)examples {
+    if (!_examples) {
+        // _examples 的相关初始化动作
+    }
+    return _examples;
+}
+
+</code></pre>
+<p>static 静态的，在堆栈的全局数据区，只声明一次，每次访问内存地址不变，且程序初始化的时候默认值是0。但是如果以局部的方式声明，除非显式的声明为0，那这个静态变量的值是随机的。（为什么？？？）</p>
+<p>const 常量。一经初始化就不能被改变。那我怎么知道我被初始化了？比如，默认是 0，那我咋知道这个默认值能不能改变。</p>
+<pre><code>static const char MJRefreshHeaderKey = '\0';
+
+</code></pre>
+<ul class="contains-task-list">
+<li class="task-list-item"><input class="task-list-item-checkbox" checked="" disabled="" type="checkbox" id="task-item-7214352"><label class="task-list-item-label" for="task-item-7214352"> 学会用 MarkDown 语法画思维导图</label></li>
+</ul>
+<pre><code>graph TD
+A0[MJRefreshNormalHeader]
+A0--&gt;B0[MJRefreshStateHeader]
+B0--&gt;C0[MJRefreshHeader]
+C0--&gt;D0[MJRefreshComponent]
+D0--&gt;E0[UIView]
+
+A1[MJRefreshBackNormalFooter]
+A1--&gt;B1[MJRefreshBackStateFooter]
+B1--&gt;C1[MJRefreshBackFooter]
+C1--&gt;D1[MJRefreshFooter]
+D1--&gt;D0
+</code></pre>
+<pre><code>NSString *const MJRefreshHeaderLastUpdatedTimeKey = @&quot;MJRefreshHeaderLastUpdatedTimeKey&quot;;
+
+</code></pre>
+<p>getter=isRefreshing 是个什么玩意儿？？</p>
+<pre><code>/** 是否正在刷新 */
+@property (assign, nonatomic, readonly, getter=isRefreshing) BOOL refreshing;
+
+</code></pre>
+<p>NS_REQUIRES_SUPER</p>
+<p>ns_requires_super</p>
+<p>子类覆盖了该方法但是没有调用 super，就会有警告</p>
+<h2 id="mjrefreshcomponent">MJRefreshComponent</h2>
+<h3 id="基类的作用">基类的作用</h3>
+<ul>
+<li>声明控件的刷新状态</li>
+<li>声明几种刷新状态的回调 Block</li>
+<li>声明刷新流程中的几个方法</li>
+<li>交给子类去实现的方法</li>
+</ul>
+<h3 id="m-文件的实现方式">.m 文件的实现方式</h3>
+<p>持有一个 UIPanGestureRecognizer 手势识别</p>
+<p>弱持有了 scrollView ，这个 父View</p>
+<p>监听了：<br>
+scrollView 的 contentOffset</p>
+<p>scrollView 的 contentSize</p>
+<p>panGestureRecognizer 的 UIGestureRecognizerState state(基类里的属性);</p>
+<pre><code>[被监听者 addObserver:监听者 forKeyPath:被监听者的某个属性 options:监听策略 context:附属信息];
+</code></pre>
+<p>在监听的触发方法里 把监听结果回调出去，给子类去实现相应的结果的处理。</p>
+<ul>
+<li>scrollViewContentOffsetDidChange</li>
+<li>scrollViewContentSizeDidChange</li>
+<li>scrollViewPanStateDidChange</li>
+</ul>
+<p>在 这个 UIView 方法 willMoveToSuperview 里添加了监听。有点像 View 的生命周期方法。</p>
+<p>MJRefreshDispatchAsyncOnMainQueue 采用这种 宏 的形式，把一些方法或者代码块放到主线程主队列里去等待实现。</p>
+<h2 id="mjrefreshheader">MJRefreshHeader</h2>
+<p>继承了 MJRefreshComponent，实现父类留有的接口</p>
+<h3 id="都干了啥">都干了啥？</h3>
+<ul>
+<li>布局，调整UI</li>
+<li>统的 NSUserDefaults 记录了刷新的时间</li>
+<li>监听的数据 处理 本样式的刷新流程的逻辑，并且设置本样式的 states</li>
+</ul>
+<h3 id="m-文件的实现方式-2">.m 文件的实现方式</h3>
+<p>父类监听的 scrollView 的变化扔出来给 Header 子类去处理</p>
+<ul>
+<li>(void)setState:(MJRefreshState)state;</li>
+</ul>
+<h2 id="mjrefreshstateheader">MJRefreshStateHeader</h2>
+<h3 id="都干了啥-2">都干了啥？</h3>
+<ul>
+<li>相当于耦合了一些业务层面的东西，时间的设置与赋值在这里</li>
+<li>不同状态下UI的展示</li>
+</ul>
+<p>一段比较诡异的代码，get 方法取了值，然后去 set,就是因为get是取的父类的实现的值，set时子类（自身）重新实现了一下 set方法。</p>
+<pre><code>// 重新设置key（重新显示时间）
+    self.lastUpdatedTimeKey = self.lastUpdatedTimeKey;
+
+</code></pre>
+<h2 id="mjrefreshnormalheader">MJRefreshNormalHeader</h2>
+<h3 id="都干了啥-3">都干了啥？</h3>
+<ul>
+<li>UI 组件的设置，区别于 GIF 图的Header</li>
+<li>一层层实现 prepare placeSubviews setState 等父类的方法来达到逻辑闭环且一层层扩展的目的</li>
+</ul>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://MJNotMJ.github.io/tag/t6sfGhhUR/" class="tag">
+                    iOS
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/ios-pai-xu-suan-fa/">
+                  <h3 class="post-title">
+                    iOS 排序算法
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

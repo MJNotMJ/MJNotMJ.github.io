@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>Block | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">Block</h2>
+            <div class="post-date">2020-11-05</div>
+            
+            <div class="post-content">
+              <p>下边三种 block 变量用 cyl_willDeallocWithSelfCallback 方法来进行 dealloc 的监听。实现细节参见 <a href="https://github.com/ChenYilong/CYLDeallocBlockExecutor">CYLDeallocBlockExecutor</a></p>
+<blockquote>
+<p>大概通过 NSObject 的分类，关联了一个实例，重写了这个实例的 dealloc 方法来触发监听。原理就是 NSObject 析构的时候会逐一把关联属性析构。这样既不用 hook dealloc 方法影响性能，也会更加方便处理监听事件。</p>
+</blockquote>
+<pre><code>    // 初始化实例
+    NSObject *obj = [[NSObject alloc] init];
+    NSLog(@&quot;计数---%ld&quot;,CFGetRetainCount((__bridge CFTypeRef)(obj)));
+    
+    // strongBlock
+    void(^strongBlock)(void) = ^{
+        NSLog(@&quot;计数---%ld&quot;,CFGetRetainCount((__bridge CFTypeRef)(obj)));
+    };
+    
+    [strongBlock cyl_willDeallocWithSelfCallback:^(__unsafe_unretained id owner, NSUInteger identifier) {
+        NSLog(@&quot;strongBlock释放了---%@&quot;,owner);
+    }];
+    
+    strongBlock();
+    
+    // weakBlock
+    __weak void(^weakBlock)(void) = ^{
+        NSLog(@&quot;计数---%ld&quot;,CFGetRetainCount((__bridge CFTypeRef)(obj)));
+    };
+    
+    [weakBlock cyl_willDeallocWithSelfCallback:^(__unsafe_unretained id owner, NSUInteger identifier) {
+        NSLog(@&quot;weakBlock释放了---%@&quot;,owner);
+    }];
+    
+    weakBlock();
+    
+    
+    // copyBlock
+    void(^copyBlock)(void) = [weakBlock copy];
+    
+    [copyBlock cyl_willDeallocWithSelfCallback:^(__unsafe_unretained id owner, NSUInteger identifier) {
+        NSLog(@&quot;copyBlock释放了---%@&quot;,owner);
+    }];
+    
+    copyBlock();
+    
+
+</code></pre>
+<p>打印结果：</p>
+<pre><code>计数---1
+计数---3
+计数---4
+计数---5
+copyBlock释放了---&lt;__NSMallocBlock__: 0x60000232b480&gt;
+strongBlock释放了---&lt;__NSMallocBlock__: 0x60000233aca0&gt;
+</code></pre>
+<p>由此看到，当初始化一个 obj 时本身是 strong 修饰，引用计数为1。接下来，默认声明的 strongBlock 在栈上，获取外部变量之后，外部变量引用计数加1，并且 ARC 自动把栈上的 strongBlock copy 到了堆上，这个时候堆上的 strongBlock 其实也捕获了外部变量，使得外部变量引用计数再加1，于是有了3。</p>
+<p>假设作用域到此，栈上的 strongBlock 会被操作系统回收（类似值类型的变量），引用计数减1；指向堆上的指针 strongBlock 也会被回收，堆上的 strongBlock 对象被销毁，引用计数减1；外部变量自身作为局部变量，指向堆上的指针最后被释放，引用计数减1；最终 obj 被释放。</p>
+<p>接下来 weak 修饰的 block 作为栈 block 同样可以捕获外部变量，使其引用计数再加1，这个时候为4；然后手动 copy 一份到堆上得到 copyBlock，同样使引用计数加1，最终得到5。其实这个过程和上述 ARC 自动 copy 的过程类似。</p>
+<p>监听 dealloc 最终触发是在最后整个函数作用域完成。copyBlock 和 strongBlock 最终都成为堆上的一个对象被释放了，而 weakBlock 本事就是栈上的一个值类型，而没有被当成一个对象 copy 到堆上，在栈上被销毁了。</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/nsstring-nei-cun-fen-xi/">
+                  <h3 class="post-title">
+                    NSString 内存分析
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

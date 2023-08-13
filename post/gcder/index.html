@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>GCD（二） | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">GCD（二）</h2>
+            <div class="post-date">2020-03-04</div>
+            
+            <div class="post-content">
+              <h2 id="dispatch_barrier_async-和-dispatch_barrier_sync">dispatch_barrier_async 和 dispatch_barrier_sync</h2>
+<pre><code>dispatch_queue_t concurrentQueue = dispatch_queue_create(&quot;mj.mjnotmj.fun&quot;, DISPATCH_QUEUE_CONCURRENT);
+    
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;1---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+    
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;2---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+
+    dispatch_barrier_async(concurrentQueue, ^{
+        // 追加任务 barrier
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;barrier---%@&quot;,[NSThread currentThread]);// 打印当前线程
+    });
+    
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;3---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+    
+    dispatch_async(concurrentQueue, ^{
+        [NSThread sleepForTimeInterval:2];              // 模拟耗时操作
+        NSLog(@&quot;4---%@&quot;,[NSThread currentThread]);      // 打印当前线程
+    });
+</code></pre>
+<p>使用 dispatch_barrier_async ，该函数只能搭配自定义并行队列 dispatch_queue_t 使用。不能使用： dispatch_get_global_queue ，否则 dispatch_barrier_async 的作用会和 dispatch_async 的作用一模一样。</p>
+<p>dispatch_barrier_sync 需要等待栅栏执行完才会执行栅栏后面的任务,而dispatch_barrier_async 无需等待栅栏执行完,会继续往下走(保留在队列里)。也就是说，dispatch_barrier_async 会把任务提交给队列，然后执行下边的代码，不用管任务有没有执行完，而 dispatch_barrier_sync 得等自身栅栏提交给队列的任务完成后，才去走之后的代码，把下边的任务提交给队列。</p>
+<h2 id="dispatch_after">dispatch_after</h2>
+<pre><code>    NSLog(@&quot;currentThread---%@&quot;,[NSThread currentThread]);  // 打印当前线程    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        // 2.0 秒后异步追加任务代码到主队列，并开始执行
+        NSLog(@&quot;after---%@&quot;,[NSThread currentThread]);  // 打印当前线程
+    });
+</code></pre>
+<p>dispatch_after 方法并不是在指定时间之后才开始执行处理，而是在指定时间之后<strong>将任务追加</strong>到<strong>主队列</strong>中。严格来说，这个时间并不是绝对准确的，但想要大致延迟执行任务，dispatch_after 方法是很有效的。</p>
+<h2 id="dispatch_once">dispatch_once</h2>
+<pre><code>    static dispatch_once_t onceToken;
+    dispatch_once(&amp;onceToken, ^{
+        // 只执行 1 次的代码（这里面默认是线程安全的）
+    });
+</code></pre>
+<h2 id="dispatch_semaphore">dispatch_semaphore</h2>
+<pre><code>// 创建信号量，value:初始信号量数 如果小于0则会返回NULL
+dispatch_semaphore_create(long value); 
+
+// 发送信号量是的信号量+1
+dispatch_semaphore_signal(dispatch_semaphore_t deem);
+
+//当信号量为0时候，会阻塞当前线程 参数（信号量，等待时间）
+dispatch_semaphore_wait(dispatch_semaphore_t dsema, dispatch_time_t timeout); 
+</code></pre>
+<p>dispatch_semaphore_signal 会对信号量 +1<br>
+dispatch_semaphore_wait 会判断当前信号量大于1，</p>
+<pre><code>//信号量初始化必须大于等于0， 因为dispatch_semaphore_wait 执行的是-1操作。
+dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+//创建异步队列
+dispatch_queue_t queue = dispatch_get_global_queue(0, 0);
+dispatch_async(queue, ^{
+        
+    sleep(1);
+    NSLog(@&quot;执行任务: A&quot;);
+    //让信号量+1
+    dispatch_semaphore_signal(semaphore);
+});
+
+// If the resulting value is less than zero,this function waits for a signal to occur before returning.如果结果值小于零，
+这个函数在返回之前等待一个信号。
+
+// 也就是说，dispatch_semaphore_wait 先减1，如果发现返回值小于0，那就等待。如果计算完成后，发现返回值等于0或者大于0，继续执行。先计算后判断。
+dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+dispatch_async(queue, ^{
+        
+    sleep(1);
+    NSLog(@&quot;执行任务: B&quot;);
+    //让信号量+1（相当于解锁）
+    dispatch_semaphore_signal(semaphore);
+});
+
+//当当前的信号量值为0时候会阻塞线，如果大于0的话，信号量-1，不阻塞线程
+dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+dispatch_async(queue, ^{
+    
+    sleep(1);
+    NSLog(@&quot;执行任务: C&quot;);
+    dispatch_semaphore_signal(semaphore);
+});
+
+</code></pre>
+<h2 id="dispatch_group">dispatch_group</h2>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://MJNotMJ.github.io/post/gcdyi/">
+                  <h3 class="post-title">
+                    GCD（一）
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

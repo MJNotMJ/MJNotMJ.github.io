@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/test/">
+                  <h2 class="post-title">Block</h2>
+                </a>
+                <div class="post-date">
+                  2020-11-05
+                </div>
+                <div class="post-abstract">
+                  
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/nsstring-nei-cun-fen-xi/">
+                  <h2 class="post-title">NSString 内存分析</h2>
+                </a>
+                <div class="post-date">
+                  2020-11-04
+                </div>
+                <div class="post-abstract">
+                  
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/shen-ru-qian-chu-ji-suan-ji-zu-cheng-yuan-li/">
+                  <h2 class="post-title">深入浅出计算机组成原理</h2>
+                </a>
+                <div class="post-date">
+                  2020-05-08
+                </div>
+                <div class="post-abstract">
+                  
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/gcder/">
+                  <h2 class="post-title">GCD（二）</h2>
+                </a>
+                <div class="post-date">
+                  2020-03-04
+                </div>
+                <div class="post-abstract">
+                  
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/gcdyi/">
+                  <h2 class="post-title">GCD（一）</h2>
+                </a>
+                <div class="post-date">
+                  2020-03-04
+                </div>
+                <div class="post-abstract">
+                  
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/shu-zi-qian-ming-and-ren-zheng/">
+                  <h2 class="post-title">数字签名 &amp;&amp; 认证 </h2>
+                </a>
+                <div class="post-date">
+                  2019-11-14
+                </div>
+                <div class="post-abstract">
+                  
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/ios-shi-jian-chuan-di-and-xiang-ying-zhe-lian-tiao/">
+                  <h2 class="post-title">iOS 事件传递 &amp;&amp; 响应者链条</h2>
+                </a>
+                <div class="post-date">
+                  2019-11-13
+                </div>
+                <div class="post-abstract">
+                  
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/uiwindow/">
+                  <h2 class="post-title">UIWindow</h2>
+                </a>
+                <div class="post-date">
+                  2019-11-13
+                </div>
+                <div class="post-abstract">
+                  
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/mjrefresh-yuan-ma-fen-xi-less-1-greater/">
+                  <h2 class="post-title">MJRefresh 源码分析&lt; 1 &gt;</h2>
+                </a>
+                <div class="post-date">
+                  2019-06-09
+                </div>
+                <div class="post-abstract">
+                  <p>第1回，先粗略分析一波 Header 的实现原理</p>
+
+                </div>
+              </div>
+              
+                <a class="right" href="https://MJNotMJ.github.io/post/mjrefresh-yuan-ma-fen-xi-less-1-greater/">
+                  <div class="feature-container" style="background-image: url('https://MJNotMJ.github.io/post-images/mjrefresh-yuan-ma-fen-xi-less-1-greater.png')">
+                  </div>
+                </a>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/ios-pai-xu-suan-fa/">
+                  <h2 class="post-title">iOS 排序算法</h2>
+                </a>
+                <div class="post-date">
+                  2019-05-26
+                </div>
+                <div class="post-abstract">
+                  <p>插入排序、希尔排序、冒泡排序</p>
+
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/chu-shi-nginx/">
+                  <h2 class="post-title">初识Nginx</h2>
+                </a>
+                <div class="post-date">
+                  2019-05-26
+                </div>
+                <div class="post-abstract">
+                  <p>Nginx 是一个 http 服务器。是一个使用c语言开发的高性能的 <strong>http 服务器</strong>及<strong>反向代理服务器</strong>。</p>
+
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/ios-nei-cun-guan-li-autoreleasepoolyi/">
+                  <h2 class="post-title">iOS内存管理：autoreleasepool（一）</h2>
+                </a>
+                <div class="post-date">
+                  2019-05-26
+                </div>
+                <div class="post-abstract">
+                  <p>在 iOS 的内存管理机制中，ARC 可以帮助开发人员很方便的进行编码，只要遵循 ARC 的规则就无需为内存纠结过多。但是，只有从 MRC 走过的程序员对内存管理才有更深的理解，“谁创建谁释放”的原则一直是那个时代的开发人员所奉行的<strong>黄金准则</strong>。</p>
+
+                </div>
+              </div>
+              
+                <a class="right" href="https://MJNotMJ.github.io/post/ios-nei-cun-guan-li-autoreleasepoolyi/">
+                  <div class="feature-container" style="background-image: url('https://upload-images.jianshu.io/upload_images/743228-765231de50860e3d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240')">
+                  </div>
+                </a>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/lao-sheng-chang-tan-de-copy/">
+                  <h2 class="post-title">老生常谈的Copy</h2>
+                </a>
+                <div class="post-date">
+                  2019-05-26
+                </div>
+                <div class="post-abstract">
+                  <p>对于 iOS 中的 Copy 可谓是一个老生常谈的问题，网上有很多的博客来介绍，不过总感觉有些”搬运<br>
+“的意味。下面我就通过图表、代码实践一把。</p>
+
+                </div>
+              </div>
+              
+                <a class="right" href="https://MJNotMJ.github.io/post/lao-sheng-chang-tan-de-copy/">
+                  <div class="feature-container" style="background-image: url('https://upload-images.jianshu.io/upload_images/743228-9e68dac435001fbf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240')">
+                  </div>
+                </a>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/kui-tan-yi-xia-arc-ji-zhi/">
+                  <h2 class="post-title">窥探一下ARC机制</h2>
+                </a>
+                <div class="post-date">
+                  2019-05-26
+                </div>
+                <div class="post-abstract">
+                  <p>ARC 是 iOS5 推出的，全称叫 ARC(Automatic Reference Counting)，即<strong>自动引用计数</strong>。既然说到“自动”，那就免不了来聊一聊“手动”、“引用计数”这两个概念。对于“手动”的理解可以追溯到 C 语言的内存管理机制，程序员要手动地创建、分配以及释放堆上的内存块，稍有不慎，就会导致内存泄漏。</p>
+
+                </div>
+              </div>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/diao-xi-yi-xia-arc-ji-zhi/">
+                  <h2 class="post-title">调戏一下ARC机制</h2>
+                </a>
+                <div class="post-date">
+                  2019-05-26
+                </div>
+                <div class="post-abstract">
+                  <p>能不能主动操作内存来进行访问呢？到底能不能在 ARC 下主动释放我们想要释放的对象？这是个很值得思考的问题。于是，我们可以借助 ARC 的规则，“借力打力”实践一下，挑战 ARC 的自动释放内存的机制。</p>
+
+                </div>
+              </div>
+              
+                <a class="right" href="https://MJNotMJ.github.io/post/diao-xi-yi-xia-arc-ji-zhi/">
+                  <div class="feature-container" style="background-image: url('https://upload-images.jianshu.io/upload_images/743228-96492f9dd1265c3e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240')">
+                  </div>
+                </a>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/cong-ying-jian-ceng-mian-li-jie-zhi-zhen/">
+                  <h2 class="post-title">从硬件层面理解指针</h2>
+                </a>
+                <div class="post-date">
+                  2019-05-26
+                </div>
+                <div class="post-abstract">
+                  <p>在计算机的体系架构中，CPU 作为核心的计算单元，主要的工作内容大概可以划分为三个步骤：<code>寻址</code>、<code>取值</code>、<code>运算</code>。</p>
+
+                </div>
+              </div>
+              
+                <a class="right" href="https://MJNotMJ.github.io/post/cong-ying-jian-ceng-mian-li-jie-zhi-zhen/">
+                  <div class="feature-container" style="background-image: url('https://upload-images.jianshu.io/upload_images/743228-91ccc3abf7ee6486.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240')">
+                  </div>
+                </a>
+              
+            </article>
+          
+            <article class="post-item">
+              <div class="left">
+                <a href="https://MJNotMJ.github.io/post/cong-bian-yi-jiao-du-li-jie-bian-liang/">
+                  <h2 class="post-title">从编译角度理解变量</h2>
+                </a>
+                <div class="post-date">
+                  2019-05-26
+                </div>
+                <div class="post-abstract">
+                  <p>计算机可以看做是一个由数以万亿的晶体管组成、通过简单逻辑的叠加组合来处理复杂事务、提供抽象的输入输出接口的模型。以上一连串的定语修饰，可以直指计算机最基础的运行机制<strong>高低电平</strong>，也就是抽象符号的<strong>0和1</strong></p>
+
+                </div>
+              </div>
+              
+                <a class="right" href="https://MJNotMJ.github.io/post/cong-bian-yi-jiao-du-li-jie-bian-liang/">
+                  <div class="feature-container" style="background-image: url('https://MJNotMJ.github.io/post-images/cong-bian-yi-jiao-du-li-jie-bian-liang.png')">
+                  </div>
+                </a>
+              
+            </article>
+          
+
+          <div class="pagination-container">
+  
+  
+</div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>

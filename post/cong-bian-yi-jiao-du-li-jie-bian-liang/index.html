@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>从编译角度理解变量 | MJNotMJ</title>
+<meta name="description" content="手可摘星辰">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://MJNotMJ.github.io/favicon.ico?v=1691920405730">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<link rel="stylesheet" href="https://MJNotMJ.github.io/styles/main.css">
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+
+
+
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://MJNotMJ.github.io">
+        <img src="https://MJNotMJ.github.io/images/avatar.png?v=1691920405730" class="site-logo">
+        <h1 class="site-title">MJNotMJ</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      手可摘星辰
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://MJNotMJ.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">从编译角度理解变量</h2>
+            <div class="post-date">2019-05-26</div>
+            
+              <div class="feature-container" style="background-image: url('https://MJNotMJ.github.io/post-images/cong-bian-yi-jiao-du-li-jie-bian-liang.png')">
+              </div>
+            
+            <div class="post-content">
+              <p>计算机可以看做是一个由数以万亿的晶体管组成、通过简单逻辑的叠加组合来处理复杂事务、提供抽象的输入输出接口的模型。以上一连串的定语修饰，可以直指计算机最基础的运行机制<strong>高低电平</strong>，也就是抽象符号的<strong>0和1</strong></p>
+<!-- more -->
+<h1 id="从编译角度理解变量">从编译角度理解变量</h1>
+<h2 id="编译">编译</h2>
+<p>计算机可以看做是一个由数以万亿的晶体管组成、通过简单逻辑的叠加组合来处理复杂事务、提供抽象的输入输出接口的模型。以上一连串的定语修饰，可以直指计算机最基础的运行机制<strong>高低电平</strong>，也就是抽象符号的<strong>0和1</strong></p>
+<p>我们都知道最开始的计算机是通过“打孔带”在进行编程的，之后通过一些列的进步演化到汇编指令，再到我们现在熟知的高级语言（C、Java），并由于场景的多样化还出现了直译型的高级语言（Python、JavaScript）。语言的演化史从某种角度来理解可以看做是人类和机器沟通的演化史，在这个“沟通”过程中，<strong>编译</strong>这个概念充当了两者的使者。在编译型语言里有“编译器”，在直译型语言里有“翻译器”，无论这个使者以什么样的形式存在，它们本质的任务都是相同的，都要把高级语言翻译成能直接操控计算机硬件的机器语言，也就是一串的01码。</p>
+<p>老生常谈，编译的过程分为4个步骤：<code>预处理</code>、<code>编译</code>、<code>汇编</code>、<code>链接</code>。其中高级代码通过<strong>预处理</strong>还是高级代码，只不过有一些宏的替换和编译关键字的替换以及文件的导入等；这时候高级代码通过<strong>编译</strong>形成汇编代码，也就是汇编助记符组成的文件；接下来这些汇编文件通过<strong>汇编</strong>最终变成了可以直接在机器中运行的01机器码；最后这些可以直接运行的机器码会通过<strong>链接</strong>来和内置的编译好的库文件进行整合，整合过程使用到了符号表和重定向，那产出物就是一份完成的可执行文件。</p>
+<h2 id="变量">变量</h2>
+<pre><code class="language--">int a;
+int b;
+int yourName;
+</code></pre>
+<p>上面的代码定义了3个变量，由不同的名字来区分。那么问题来了，尤其是对于一个不是很了解代码底层运行机制的编码人员来说：</p>
+<ul>
+<li>这个 ”a“、”b“、”yourName“ 是怎么存储进我的程序里呢？</li>
+<li>程序里用不用开辟一些空间来安放这些变量的名称呢？</li>
+<li>那么假设上一条成立的话我声明一个特别长特别长的变量名是不是影响我的程序大小呢？</li>
+<li>程序是怎么通过名字来区分不同的变量呢？</li>
+<li>既然有了不同的符号去区分不同变量，那类型的作用呢？</li>
+</ul>
+<p>. . . . . .</p>
+<p>有以上的种种疑问，就说明我们对于程序运行的本质没有一个清楚的认知。在<a href="https://xuebudinger.github.io/">从硬件层面理解指针</a>的文章中提到，CPU一个很重要的动作就是<strong>取值</strong>，这就涉及到了用于装载这些数值的容器。人脑可以想象一个很大的数，人脑也可以在做竖式加减运算的时候只关注正在计算的进制位，然后一位一位地移动来完成整个大数的竖式运算，这是人脑作为高级智能生物的想象力的展现。但是计算机作为机器，在命令它进行运算时就得给它指定用于运算的数据资料，这些数据资料必然有确切的大小，这样计算机才能用合适的存储空间进行存储，才能为计算提供工作空间。**从哪取值？取多大的值？**这就是计算机所面临的问题了。未解决这些问题，人们设计了一套通过编程语言和编译器的协作的方式来告诉计算机该怎样取值。</p>
+<pre><code class="language--">0x7fff54a82991 &lt;+739&gt;:  movq   0x5ca02af0(%rip), %rsi    
+0x7fff54a82998 &lt;+746&gt;:  movq   %rbx, %rdi
+0x7fff54a8299b &lt;+749&gt;:  callq  *0x5c7037c7(%rip)         
+0x7fff54a829a1 &lt;+755&gt;:  movl   $0x5, %edi
+0x7fff54a829a6 &lt;+760&gt;:  nop    
+0x7fff54a829a7 &lt;+761&gt;:  nopl   (%rax)
+0x7fff54a829ab &lt;+765&gt;:  movq   -0x30(%rbp), %rdi
+0x7fff54a829af &lt;+769&gt;:  callq  0x7fff55689606          
+0x7fff54a829b4 &lt;+774&gt;:  movl   $0x6, %edi
+0x7fff54a829b9 &lt;+779&gt;:  nop    
+0x7fff54a829ba &lt;+780&gt;:  nopl   (%rax)
+</code></pre>
+<p>以上举例一段汇编代码理解编译器是如何处理变量的<strong>起始地址</strong>和<strong>偏移量</strong>来完成”从哪取值？取多大的值？”的。通过指针来表示地址，通过类型来表示偏移量。这就是为什么变量作为参数进行传递的时候，我们不用去在内存中copy一块这个变量的内存空间，想想这样做的话将会是对内存一种极大的浪费，所以计算机内大多数值的传递就是指针地址的传递。这也是为什么 int 类型的有一个 -2147483648 ～ 2147483647 的取值范围了，因为4个字节的偏移量，也就是32个比特位最多能表示那么多种组合数。也就是说早在程序运行之前，编译好的代码就已经可以预知代码的运行逻辑和空间大小，这些也就是“反编译”开发的基础。</p>
+<p>接下来对于编译中符号表、重定向、函数跳转等的理解放在专门的编译文章中。</p>
+<p>##一个实际的变量的例子</p>
+<pre><code class="language--">NSObject *obj;
+obj = [[NSObject alloc] init];
+if (obj) {
+    NSLog(@&quot;已经被初始化&quot;);
+}else{
+    NSLog(@&quot;未被初始化&quot;);
+}
+    
+NSObject *obj_1;
+obj_1 = [[NSObject alloc] init];
+obj_1 = nil;
+if (obj_1) {
+    NSLog(@&quot;已经被初始化&quot;);
+}else{
+    NSLog(@&quot;未被初始化&quot;);
+}
+    
+int flag_1;
+flag_1 = 20;
+if (flag_1) {
+    NSLog(@&quot;已经被初始化&quot;);
+}else{
+    NSLog(@&quot;未被初始化&quot;);
+}
+
+int flag_2;
+if (flag_2) {
+    NSLog(@&quot;已经被初始化&quot;);
+}else{
+    NSLog(@&quot;未被初始化&quot;);
+}
+    
+int flag;
+flag = 0;
+if (flag) {
+    NSLog(@&quot;已经被初始化&quot;);
+}else{
+    NSLog(@&quot;未被初始化&quot;);
+}
+
+</code></pre>
+<p>打印结果</p>
+<pre><code>已经被初始化
+未被初始化
+未被初始化
+已经被初始化
+未被初始化
+</code></pre>
+<p>对于一个对象实例来说，它的指针变量的值，指向了它所代表的堆中某块内存空间。if判断语句可以通过<strong>0</strong>或<strong>非0</strong>来判断一个变量有没有被初始化。当一个指针被置为nil时，if判断语句就会认为这个指针变量目前没有指向任何堆空间，也就是说这个指针变量没有被初始化。那么在OC这个不是完全面向对象的编程语言中，基本数据类型的初始化以为着什么呢？看上边代码的运行结果，对于基本数据类型<strong>只声明</strong>和<strong>赋值为0</strong>都会被认为是没有被初始化。<a href="https://blog.csdn.net/liuqiaoyu080512/article/details/8455652">未初始化全局变量</a>这篇文章讲述了没有被初始化的全局变量，编译器是怎样对它进行的处理。也就是说，假设我们在实际开发过程中，有对于有意义的“0”的基本数据类型进行判断，我们只能用数值是否相等来进行。</p>
+
+            </div>
+            
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<script type="application/javascript">
+
+AOS.init();
+
+hljs.initHighlightingOnLoad()
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+
+
+  </body>
+</html>
